@@ -105,6 +105,7 @@
 		55E5DDD5129332EA00E36302 /* randtable.c in Sources */ = {isa = PBXBuildFile; fileRef = 55E5DDC6129332EA00E36302 /* randtable.c */; };
 		55E5DDD6129332EA00E36302 /* spewG.c in Sources */ = {isa = PBXBuildFile; fileRef = 55E5DDC7129332EA00E36302 /* spewG.c */; };
 		55E5DDD7129332EA00E36302 /* unzcrash.c in Sources */ = {isa = PBXBuildFile; fileRef = 55E5DDC8129332EA00E36302 /* unzcrash.c */; };
+		55E5DDDE129333B500E36302 /* libarchive_custom_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 55E5DDDD129333B500E36302 /* libarchive_custom_config.h */; };
 		AA747D9F0F9514B9006C5449 /* arc_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = AA747D9E0F9514B9006C5449 /* arc_Prefix.pch */; };
 		AACBBE4A0F95108600F1A2B1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AACBBE490F95108600F1A2B1 /* Foundation.framework */; };
 /* End PBXBuildFile section */
@@ -208,6 +209,7 @@
 		55E5DDC6129332EA00E36302 /* randtable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = randtable.c; path = ../bzip2/randtable.c; sourceTree = SOURCE_ROOT; };
 		55E5DDC7129332EA00E36302 /* spewG.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = spewG.c; path = ../bzip2/spewG.c; sourceTree = SOURCE_ROOT; };
 		55E5DDC8129332EA00E36302 /* unzcrash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = unzcrash.c; path = ../bzip2/unzcrash.c; sourceTree = SOURCE_ROOT; };
+		55E5DDDD129333B500E36302 /* libarchive_custom_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libarchive_custom_config.h; sourceTree = "<group>"; };
 		AA747D9E0F9514B9006C5449 /* arc_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = arc_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		AACBBE490F95108600F1A2B1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		D2AAC07E0554694100DB518D /* libarc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libarc.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -258,6 +260,7 @@
 		32C88DFF0371C24200C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				55E5DDDD129333B500E36302 /* libarchive_custom_config.h */,
 				AA747D9E0F9514B9006C5449 /* arc_Prefix.pch */,
 			);
 			name = "Other Sources";
@@ -400,6 +403,7 @@
 				55E5DDB91293329E00E36302 /* filter_fork.h in Headers */,
 				55E5DDCC129332EA00E36302 /* bzlib_private.h in Headers */,
 				55E5DDCE129332EA00E36302 /* bzlib.h in Headers */,
+				55E5DDDE129333B500E36302 /* libarchive_custom_config.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -578,6 +582,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CFLAGS = "-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"";
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
 				SDKROOT = iphoneos;
@@ -591,6 +596,7 @@
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CFLAGS = "-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"";
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
 				SDKROOT = iphoneos;

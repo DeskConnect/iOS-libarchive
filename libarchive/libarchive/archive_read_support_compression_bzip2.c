@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read_support_compression_bzip2.c
 #include <unistd.h>
 #endif
 #ifdef HAVE_BZLIB_H
-#include <bzlib.h>
+#include "bzlib.h"
 #endif
 
 #include "archive.h"
