@@ -13,6 +13,7 @@ To keep naming of things sane, we build the library as `libarc.a`.
 
 One last note: `libarc.a` links dynamically to `libz.dylib` -- this is okay since, for whatever reason, AAPL saw fit to include the `libz` headers in the iOS SDK.
 
+The current `libarchive` version is `2.8.4`. The `bzlib2` version is `1.0.6`.
 
 
 
