@@ -7,7 +7,9 @@ Never fear! This repository contains everything you need to build a static versi
 
 To keep naming of things sane, we build the library as `libarc.a`. 
 
-**If you just want to get going for iOS 4.2+**, grab the header files and library in the `build-for-iOS-4.2-8C134` directory.
+**If you just want to get going for iOS 4.2**, grab the header files and library in the `build-for-iOS-4.2` directory.
+
+**If you just want to get going for iOS 4.3+**, grab the header files and library in the `build-for-iOS-4.3` directory.
 
 **If you need to build this for a different version of iOS**, you can easily modify the `build.sh` script to point to whatever SDKs you like. It should build fine on 3.x.
 
