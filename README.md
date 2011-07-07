@@ -7,13 +7,13 @@ Never fear! This repository contains everything you need to build a static versi
 
 To keep naming of things sane, we build the library as `libarc.a`. 
 
-**If you just want to get going for iOS 4.2**, grab the header files and library in the `build-for-iOS-4.2` directory.
+**For iOS 4.3+** copy the header files and library from the `build-for-iOS-4.3` directory into your project.
 
-**If you just want to get going for iOS 4.3+**, grab the header files and library in the `build-for-iOS-4.3` directory.
+**For iOS 4.2** copy the header files and library from the `build-for-iOS-4.2` directory into your project.
 
-**If you need to build this for a different version of iOS**, you can easily modify the `build.sh` script to point to whatever SDKs you like. It should build fine on 3.x.
+**If you need to build this for an earlier version of iOS**, you can easily modify the `build.sh` script to point to whatever SDKs you like. It should build fine on 3.x.
 
-One last note: `libarc.a` links dynamically to `libz.dylib` -- this is okay since, for whatever reason, AAPL saw fit to include the `libz` headers in the iOS SDK.
+**TO GET IT FULLY LINKING** you must also include `libz.dylib` in your list of linked libraries. To do this in XCode 4, click on your project, choose the `Build Phases` tab, go to `Link Binary With Libraries`, press `+`, and choose `libz.dylib` from the (long) list of possible libraries to link against. This is because `libarc.a` links dynamically to `libz.dylib` -- this is okay since, for whatever reason, AAPL saw fit to include the `libz` headers in the iOS SDK.
 
 The current `libarchive` version is `2.8.4`. The `bzlib2` version is `1.0.6`.
 
