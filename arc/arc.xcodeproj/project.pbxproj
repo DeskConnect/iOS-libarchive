@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		55E5DD151293320800E36302 /* libz.1.2.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55E5DD141293320800E36302 /* libz.1.2.3.dylib */; };
 		55E5DD681293329E00E36302 /* archive_check_magic.c in Sources */ = {isa = PBXBuildFile; fileRef = 55E5DD161293329E00E36302 /* archive_check_magic.c */; };
 		55E5DD691293329E00E36302 /* archive_crc32.h in Headers */ = {isa = PBXBuildFile; fileRef = 55E5DD171293329E00E36302 /* archive_crc32.h */; };
 		55E5DD6A1293329E00E36302 /* archive_endian.h in Headers */ = {isa = PBXBuildFile; fileRef = 55E5DD181293329E00E36302 /* archive_endian.h */; };
@@ -102,6 +101,7 @@
 		55E5DDDE129333B500E36302 /* libarchive_custom_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 55E5DDDD129333B500E36302 /* libarchive_custom_config.h */; };
 		AA747D9F0F9514B9006C5449 /* arc_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = AA747D9E0F9514B9006C5449 /* arc_Prefix.pch */; };
 		AACBBE4A0F95108600F1A2B1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AACBBE490F95108600F1A2B1 /* Foundation.framework */; };
+		F4FA3C3F160736B600DA6574 /* libz.1.2.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F4FA3C3E160736B600DA6574 /* libz.1.2.5.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -207,6 +207,7 @@
 		AA747D9E0F9514B9006C5449 /* arc_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = arc_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		AACBBE490F95108600F1A2B1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		D2AAC07E0554694100DB518D /* libarc.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libarc.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4FA3C3E160736B600DA6574 /* libz.1.2.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.2.5.dylib; path = usr/lib/libz.1.2.5.dylib; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -214,8 +215,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F4FA3C3F160736B600DA6574 /* libz.1.2.5.dylib in Frameworks */,
 				AACBBE4A0F95108600F1A2B1 /* Foundation.framework in Frameworks */,
-				55E5DD151293320800E36302 /* libz.1.2.3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,6 +234,7 @@
 		0867D691FE84028FC02AAC07 /* arc */ = {
 			isa = PBXGroup;
 			children = (
+				F4FA3C3E160736B600DA6574 /* libz.1.2.5.dylib */,
 				55E5DD0D129331E200E36302 /* libarchive */,
 				55E5DD0C129331DA00E36302 /* libbz2 */,
 				32C88DFF0371C24200C91783 /* Other Sources */,
