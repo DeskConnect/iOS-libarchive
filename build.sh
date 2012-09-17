@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # Quick hack to build libarc.a suitable for both simulator and device.
-# It builds against 4.3.
 
 SDK_VERSION=6.0
 
