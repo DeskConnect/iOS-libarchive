@@ -82,14 +82,14 @@ static void	cleanup(void *);
  * getpwnam()!
  */
 int
-archive_write_disk_set_standard_lookup(struct archive *a)
+tk_archive_write_disk_set_standard_lookup(struct archive *a)
 {
 	struct bucket *ucache = malloc(cache_size * sizeof(struct bucket));
 	struct bucket *gcache = malloc(cache_size * sizeof(struct bucket));
 	memset(ucache, 0, cache_size * sizeof(struct bucket));
 	memset(gcache, 0, cache_size * sizeof(struct bucket));
-	archive_write_disk_set_group_lookup(a, gcache, lookup_gid, cleanup);
-	archive_write_disk_set_user_lookup(a, ucache, lookup_uid, cleanup);
+	tk_archive_write_disk_set_group_lookup(a, gcache, lookup_gid, cleanup);
+	tk_archive_write_disk_set_user_lookup(a, ucache, lookup_uid, cleanup);
 	return (ARCHIVE_OK);
 }
 

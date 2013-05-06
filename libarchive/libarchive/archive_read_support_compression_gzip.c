@@ -79,7 +79,7 @@ static int	gzip_bidder_bid(struct archive_read_filter_bidder *,
 static int	gzip_bidder_init(struct archive_read_filter *);
 
 int
-archive_read_support_compression_gzip(struct archive *_a)
+tk_archive_read_support_compression_gzip(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct archive_read_filter_bidder *bidder = __archive_read_get_bidder(a);
@@ -96,7 +96,7 @@ archive_read_support_compression_gzip(struct archive *_a)
 #if HAVE_ZLIB_H
 	return (ARCHIVE_OK);
 #else
-	archive_set_error(_a, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(_a, ARCHIVE_ERRNO_MISC,
 	    "Using external gunzip program");
 	return (ARCHIVE_WARN);
 #endif
@@ -253,7 +253,7 @@ gzip_bidder_init(struct archive_read_filter *self)
 	if (state == NULL || out_block == NULL) {
 		free(out_block);
 		free(state);
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Can't allocate data for gzip decompression");
 		return (ARCHIVE_FATAL);
 	}
@@ -302,24 +302,24 @@ consume_header(struct archive_read_filter *self)
 		state->in_stream = 1;
 		return (ARCHIVE_OK);
 	case Z_STREAM_ERROR:
-		archive_set_error(&self->archive->archive,
+		tk_archive_set_error(&self->archive->archive,
 		    ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library: "
 		    "invalid setup parameter");
 		break;
 	case Z_MEM_ERROR:
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Internal error initializing compression library: "
 		    "out of memory");
 		break;
 	case Z_VERSION_ERROR:
-		archive_set_error(&self->archive->archive,
+		tk_archive_set_error(&self->archive->archive,
 		    ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library: "
 		    "invalid library version");
 		break;
 	default:
-		archive_set_error(&self->archive->archive,
+		tk_archive_set_error(&self->archive->archive,
 		    ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library: "
 		    " Zlib error %d", ret);
@@ -342,7 +342,7 @@ consume_trailer(struct archive_read_filter *self)
 	case Z_OK:
 		break;
 	default:
-		archive_set_error(&self->archive->archive,
+		tk_archive_set_error(&self->archive->archive,
 		    ARCHIVE_ERRNO_MISC,
 		    "Failed to clean up gzip decompressor");
 		return (ARCHIVE_FATAL);
@@ -416,7 +416,7 @@ gzip_filter_read(struct archive_read_filter *self, const void **p)
 			break;
 		default:
 			/* Return an error. */
-			archive_set_error(&self->archive->archive,
+			tk_archive_set_error(&self->archive->archive,
 			    ARCHIVE_ERRNO_MISC,
 			    "gzip decompression failed");
 			return (ARCHIVE_FATAL);
@@ -450,7 +450,7 @@ gzip_filter_close(struct archive_read_filter *self)
 		case Z_OK:
 			break;
 		default:
-			archive_set_error(&(self->archive->archive),
+			tk_archive_set_error(&(self->archive->archive),
 			    ARCHIVE_ERRNO_MISC,
 			    "Failed to clean up gzip compressor");
 			ret = ARCHIVE_FATAL;

@@ -41,24 +41,24 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_format.c 201168 2009-1
 static
 struct { int code; int (*setter)(struct archive *); } codes[] =
 {
-	{ ARCHIVE_FORMAT_CPIO,		archive_write_set_format_cpio },
-	{ ARCHIVE_FORMAT_CPIO_SVR4_NOCRC,	archive_write_set_format_cpio_newc },
-	{ ARCHIVE_FORMAT_CPIO_POSIX,	archive_write_set_format_cpio },
-	{ ARCHIVE_FORMAT_MTREE,		archive_write_set_format_mtree },
-	{ ARCHIVE_FORMAT_SHAR,		archive_write_set_format_shar },
-	{ ARCHIVE_FORMAT_SHAR_BASE,	archive_write_set_format_shar },
-	{ ARCHIVE_FORMAT_SHAR_DUMP,	archive_write_set_format_shar_dump },
-	{ ARCHIVE_FORMAT_TAR,	archive_write_set_format_pax_restricted },
-	{ ARCHIVE_FORMAT_TAR_PAX_INTERCHANGE, archive_write_set_format_pax },
+	{ ARCHIVE_FORMAT_CPIO,		tk_archive_write_set_format_cpio },
+	{ ARCHIVE_FORMAT_CPIO_SVR4_NOCRC,	tk_archive_write_set_format_cpio_newc },
+	{ ARCHIVE_FORMAT_CPIO_POSIX,	tk_archive_write_set_format_cpio },
+	{ ARCHIVE_FORMAT_MTREE,		tk_archive_write_set_format_mtree },
+	{ ARCHIVE_FORMAT_SHAR,		tk_archive_write_set_format_shar },
+	{ ARCHIVE_FORMAT_SHAR_BASE,	tk_archive_write_set_format_shar },
+	{ ARCHIVE_FORMAT_SHAR_DUMP,	tk_archive_write_set_format_shar_dump },
+	{ ARCHIVE_FORMAT_TAR,	tk_archive_write_set_format_pax_restricted },
+	{ ARCHIVE_FORMAT_TAR_PAX_INTERCHANGE, tk_archive_write_set_format_pax },
 	{ ARCHIVE_FORMAT_TAR_PAX_RESTRICTED,
-				archive_write_set_format_pax_restricted },
-	{ ARCHIVE_FORMAT_TAR_USTAR,	archive_write_set_format_ustar },
-	{ ARCHIVE_FORMAT_ZIP,	archive_write_set_format_zip },
+				tk_archive_write_set_format_pax_restricted },
+	{ ARCHIVE_FORMAT_TAR_USTAR,	tk_archive_write_set_format_ustar },
+	{ ARCHIVE_FORMAT_ZIP,	tk_archive_write_set_format_zip },
 	{ 0,		NULL }
 };
 
 int
-archive_write_set_format(struct archive *a, int code)
+tk_archive_write_set_format(struct archive *a, int code)
 {
 	int i;
 
@@ -67,6 +67,6 @@ archive_write_set_format(struct archive *a, int code)
 			return ((codes[i].setter)(a));
 	}
 
-	archive_set_error(a, EINVAL, "No such format");
+	tk_archive_set_error(a, EINVAL, "No such format");
 	return (ARCHIVE_FATAL);
 }

@@ -57,7 +57,7 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write.c 201099 2009-12-28 03:03:
 #include "archive_private.h"
 #include "archive_write_private.h"
 
-static struct archive_vtable *archive_write_vtable(void);
+static struct archive_vtable *tk_archive_write_vtable(void);
 
 static int	_archive_write_close(struct archive *);
 static int	_archive_write_finish(struct archive *);
@@ -66,17 +66,17 @@ static int	_archive_write_finish_entry(struct archive *);
 static ssize_t	_archive_write_data(struct archive *, const void *, size_t);
 
 static struct archive_vtable *
-archive_write_vtable(void)
+tk_archive_write_vtable(void)
 {
 	static struct archive_vtable av;
 	static int inited = 0;
 
 	if (!inited) {
-		av.archive_close = _archive_write_close;
-		av.archive_finish = _archive_write_finish;
-		av.archive_write_header = _archive_write_header;
-		av.archive_write_finish_entry = _archive_write_finish_entry;
-		av.archive_write_data = _archive_write_data;
+		av.tk_archive_close = _archive_write_close;
+		av.tk_archive_finish = _archive_write_finish;
+		av.tk_archive_write_header = _archive_write_header;
+		av.tk_archive_write_finish_entry = _archive_write_finish_entry;
+		av.tk_archive_write_data = _archive_write_data;
 	}
 	return (&av);
 }
@@ -85,7 +85,7 @@ archive_write_vtable(void)
  * Allocate, initialize and return an archive object.
  */
 struct archive *
-archive_write_new(void)
+tk_archive_write_new(void)
 {
 	struct archive_write *a;
 	unsigned char *nulls;
@@ -96,7 +96,7 @@ archive_write_new(void)
 	memset(a, 0, sizeof(*a));
 	a->archive.magic = ARCHIVE_WRITE_MAGIC;
 	a->archive.state = ARCHIVE_STATE_NEW;
-	a->archive.vtable = archive_write_vtable();
+	a->archive.vtable = tk_archive_write_vtable();
 	/*
 	 * The value 10240 here matches the traditional tar default,
 	 * but is otherwise arbitrary.
@@ -120,7 +120,7 @@ archive_write_new(void)
 	 * client to link in support for that format, even if they didn't
 	 * ever use it.
 	 */
-	archive_write_set_compression_none(&a->archive);
+	tk_archive_write_set_compression_none(&a->archive);
 	return (&a->archive);
 }
 
@@ -128,7 +128,7 @@ archive_write_new(void)
  * Set write options for the format. Returns 0 if successful.
  */
 int
-archive_write_set_format_options(struct archive *_a, const char *s)
+tk_archive_write_set_format_options(struct archive *_a, const char *s)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	char key[64], val[64];
@@ -136,7 +136,7 @@ archive_write_set_format_options(struct archive *_a, const char *s)
 
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_NEW, "archive_write_set_format_options");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 
 	if (s == NULL || *s == '\0')
 		return (ARCHIVE_OK);
@@ -153,14 +153,14 @@ archive_write_set_format_options(struct archive *_a, const char *s)
 		if (r == ARCHIVE_FATAL)
 			return (r);
 		if (r < ARCHIVE_OK) { /* This key was not handled. */
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "Unsupported option ``%s''", key);
 			ret = ARCHIVE_WARN;
 		}
 		s += len;
 	}
 	if (len < 0) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Malformed options string.");
 		return (ARCHIVE_WARN);
 	}
@@ -171,7 +171,7 @@ archive_write_set_format_options(struct archive *_a, const char *s)
  * Set write options for the compressor. Returns 0 if successful.
  */
 int
-archive_write_set_compressor_options(struct archive *_a, const char *s)
+tk_archive_write_set_compressor_options(struct archive *_a, const char *s)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	char key[64], val[64];
@@ -180,12 +180,12 @@ archive_write_set_compressor_options(struct archive *_a, const char *s)
 
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_NEW, "archive_write_set_compressor_options");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 
 	if (s == NULL || *s == '\0')
 		return (ARCHIVE_OK);
 	if (a->compressor.options == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Unsupported option ``%s''", s);
 		/* This compressor does not support option. */
 		return (ARCHIVE_WARN);
@@ -200,14 +200,14 @@ archive_write_set_compressor_options(struct archive *_a, const char *s)
 		if (r == ARCHIVE_FATAL)
 			return (r);
 		if (r < ARCHIVE_OK) {
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "Unsupported option ``%s''", key);
 			ret = ARCHIVE_WARN;
 		}
 		s += len;
 	}
 	if (len < 0) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Illegal format options.");
 		return (ARCHIVE_WARN);
 	}
@@ -218,14 +218,14 @@ archive_write_set_compressor_options(struct archive *_a, const char *s)
  * Set write options for the format and the compressor. Returns 0 if successful.
  */
 int
-archive_write_set_options(struct archive *_a, const char *s)
+tk_archive_write_set_options(struct archive *_a, const char *s)
 {
 	int r1, r2;
 
-	r1 = archive_write_set_format_options(_a, s);
+	r1 = tk_archive_write_set_format_options(_a, s);
 	if (r1 < ARCHIVE_WARN)
 		return (r1);
-	r2 = archive_write_set_compressor_options(_a, s);
+	r2 = tk_archive_write_set_compressor_options(_a, s);
 	if (r2 < ARCHIVE_WARN)
 		return (r2);
 	if (r1 == ARCHIVE_WARN && r2 == ARCHIVE_WARN)
@@ -237,7 +237,7 @@ archive_write_set_options(struct archive *_a, const char *s)
  * Set the block size.  Returns 0 if successful.
  */
 int
-archive_write_set_bytes_per_block(struct archive *_a, int bytes_per_block)
+tk_archive_write_set_bytes_per_block(struct archive *_a, int bytes_per_block)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
@@ -250,7 +250,7 @@ archive_write_set_bytes_per_block(struct archive *_a, int bytes_per_block)
  * Get the current block size.  -1 if it has never been set.
  */
 int
-archive_write_get_bytes_per_block(struct archive *_a)
+tk_archive_write_get_bytes_per_block(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
@@ -263,7 +263,7 @@ archive_write_get_bytes_per_block(struct archive *_a)
  * Returns 0 if successful.
  */
 int
-archive_write_set_bytes_in_last_block(struct archive *_a, int bytes)
+tk_archive_write_set_bytes_in_last_block(struct archive *_a, int bytes)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
@@ -276,7 +276,7 @@ archive_write_set_bytes_in_last_block(struct archive *_a, int bytes)
  * Return the value set above.  -1 indicates it has not been set.
  */
 int
-archive_write_get_bytes_in_last_block(struct archive *_a)
+tk_archive_write_get_bytes_in_last_block(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
@@ -290,7 +290,7 @@ archive_write_get_bytes_in_last_block(struct archive *_a)
  * an archive to itself recursively.
  */
 int
-archive_write_set_skip_file(struct archive *_a, dev_t d, ino_t i)
+tk_archive_write_set_skip_file(struct archive *_a, dev_t d, ino_t i)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
@@ -305,16 +305,16 @@ archive_write_set_skip_file(struct archive *_a, dev_t d, ino_t i)
  * Open the archive using the current settings.
  */
 int
-archive_write_open(struct archive *_a, void *client_data,
-    archive_open_callback *opener, archive_write_callback *writer,
-    archive_close_callback *closer)
+tk_archive_write_open(struct archive *_a, void *client_data,
+    tk_archive_open_callback *opener, tk_archive_write_callback *writer,
+    tk_archive_close_callback *closer)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	int ret;
 
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_NEW, "archive_write_open");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 	a->archive.state = ARCHIVE_STATE_HEADER;
 	a->client_data = client_data;
 	a->client_writer = writer;
@@ -391,11 +391,11 @@ _archive_write_finish(struct archive *_a)
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_ANY, "archive_write_finish");
 	if (a->archive.state != ARCHIVE_STATE_CLOSED)
-		r = archive_write_close(&a->archive);
+		r = tk_archive_write_close(&a->archive);
 
 	/* Release various dynamic buffers. */
 	free((void *)(uintptr_t)(const void *)a->nulls);
-	archive_string_free(&a->archive.error_string);
+	tk_archive_string_free(&a->archive.error_string);
 	a->archive.magic = 0;
 	free(a);
 	return (r);
@@ -412,18 +412,18 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_DATA | ARCHIVE_STATE_HEADER, "archive_write_header");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 
 	/* In particular, "retry" and "fatal" get returned immediately. */
-	ret = archive_write_finish_entry(&a->archive);
+	ret = tk_archive_write_finish_entry(&a->archive);
 	if (ret < ARCHIVE_OK && ret != ARCHIVE_WARN)
 		return (ret);
 
 	if (a->skip_file_dev != 0 &&
-	    archive_entry_dev(entry) == a->skip_file_dev &&
+	    tk_archive_entry_dev(entry) == a->skip_file_dev &&
 	    a->skip_file_ino != 0 &&
-	    archive_entry_ino64(entry) == a->skip_file_ino) {
-		archive_set_error(&a->archive, 0,
+	    tk_archive_entry_ino64(entry) == a->skip_file_ino) {
+		tk_archive_set_error(&a->archive, 0,
 		    "Can't add archive to itself");
 		return (ARCHIVE_FAILED);
 	}
@@ -461,6 +461,6 @@ _archive_write_data(struct archive *_a, const void *buff, size_t s)
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_DATA, "archive_write_data");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 	return ((a->format_write_data)(a, buff, s));
 }

@@ -31,49 +31,49 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_virtual.c 201098 2009-12-28 02:5
 #include "archive_private.h"
 
 int
-archive_write_close(struct archive *a)
+tk_archive_write_close(struct archive *a)
 {
-	return ((a->vtable->archive_close)(a));
+	return ((a->vtable->tk_archive_close)(a));
 }
 
 int
-archive_read_close(struct archive *a)
+tk_archive_read_close(struct archive *a)
 {
-	return ((a->vtable->archive_close)(a));
+	return ((a->vtable->tk_archive_close)(a));
 }
 
 #if ARCHIVE_API_VERSION > 1
 int
-archive_write_finish(struct archive *a)
+tk_archive_write_finish(struct archive *a)
 {
-	return ((a->vtable->archive_finish)(a));
+	return ((a->vtable->tk_archive_finish)(a));
 }
 #else
 /* Temporarily allow library to compile with either 1.x or 2.0 API. */
 void
-archive_write_finish(struct archive *a)
+tk_archive_write_finish(struct archive *a)
 {
-	(void)(a->vtable->archive_finish)(a);
+	(void)(a->vtable->tk_archive_finish)(a);
 }
 #endif
 
 int
-archive_read_finish(struct archive *a)
+tk_archive_read_finish(struct archive *a)
 {
-	return ((a->vtable->archive_finish)(a));
+	return ((a->vtable->tk_archive_finish)(a));
 }
 
 int
-archive_write_header(struct archive *a, struct archive_entry *entry)
+tk_archive_write_header(struct archive *a, struct archive_entry *entry)
 {
 	++a->file_count;
-	return ((a->vtable->archive_write_header)(a, entry));
+	return ((a->vtable->tk_archive_write_header)(a, entry));
 }
 
 int
-archive_write_finish_entry(struct archive *a)
+tk_archive_write_finish_entry(struct archive *a)
 {
-	return ((a->vtable->archive_write_finish_entry)(a));
+	return ((a->vtable->tk_archive_write_finish_entry)(a));
 }
 
 #if ARCHIVE_API_VERSION > 1
@@ -82,13 +82,13 @@ ssize_t
 /* Temporarily allow library to compile with either 1.x or 2.0 API. */
 int
 #endif
-archive_write_data(struct archive *a, const void *buff, size_t s)
+tk_archive_write_data(struct archive *a, const void *buff, size_t s)
 {
-	return ((a->vtable->archive_write_data)(a, buff, s));
+	return ((a->vtable->tk_archive_write_data)(a, buff, s));
 }
 
 ssize_t
-archive_write_data_block(struct archive *a, const void *buff, size_t s, off_t o)
+tk_archive_write_data_block(struct archive *a, const void *buff, size_t s, off_t o)
 {
-	return ((a->vtable->archive_write_data_block)(a, buff, s, o));
+	return ((a->vtable->tk_archive_write_data_block)(a, buff, s, o));
 }

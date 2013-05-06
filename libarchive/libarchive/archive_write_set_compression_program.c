@@ -37,9 +37,9 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_compression_program.c 
  * this function is actually invoked.
  */
 int
-archive_write_set_compression_program(struct archive *_a, const char *cmd)
+tk_archive_write_set_compression_program(struct archive *_a, const char *cmd)
 {
-	archive_set_error(_a, -1,
+	tk_archive_set_error(_a, -1,
 	    "External compression programs not supported on this platform");
 	return (ARCHIVE_FATAL);
 }
@@ -77,21 +77,21 @@ struct private_data {
 	size_t		 child_buf_len, child_buf_avail;
 };
 
-static int	archive_compressor_program_finish(struct archive_write *);
-static int	archive_compressor_program_init(struct archive_write *);
-static int	archive_compressor_program_write(struct archive_write *,
+static int	tk_archive_compressor_program_finish(struct archive_write *);
+static int	tk_archive_compressor_program_init(struct archive_write *);
+static int	tk_archive_compressor_program_write(struct archive_write *,
 		    const void *, size_t);
 
 /*
  * Allocate, initialize and return a archive object.
  */
 int
-archive_write_set_compression_program(struct archive *_a, const char *cmd)
+tk_archive_write_set_compression_program(struct archive *_a, const char *cmd)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_NEW, "archive_write_set_compression_program");
-	a->compressor.init = &archive_compressor_program_init;
+	a->compressor.init = &tk_archive_compressor_program_init;
 	a->compressor.config = strdup(cmd);
 	return (ARCHIVE_OK);
 }
@@ -100,7 +100,7 @@ archive_write_set_compression_program(struct archive *_a, const char *cmd)
  * Setup callback.
  */
 static int
-archive_compressor_program_init(struct archive_write *a)
+tk_archive_compressor_program_init(struct archive_write *a)
 {
 	int ret;
 	struct private_data *state;
@@ -115,7 +115,7 @@ archive_compressor_program_init(struct archive_write *a)
 
 	state = (struct private_data *)malloc(sizeof(*state));
 	if (state == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression");
 		return (ARCHIVE_FATAL);
 	}
@@ -132,7 +132,7 @@ archive_compressor_program_init(struct archive_write *a)
 	state->child_buf = malloc(state->child_buf_len);
 
 	if (state->child_buf == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression buffer");
 		free(state);
 		return (ARCHIVE_FATAL);
@@ -140,15 +140,15 @@ archive_compressor_program_init(struct archive_write *a)
 
 	if ((state->child = __archive_create_child(cmd,
 		 &state->child_stdin, &state->child_stdout)) == -1) {
-		archive_set_error(&a->archive, EINVAL,
+		tk_archive_set_error(&a->archive, EINVAL,
 		    "Can't initialise filter");
 		free(state->child_buf);
 		free(state);
 		return (ARCHIVE_FATAL);
 	}
 
-	a->compressor.write = archive_compressor_program_write;
-	a->compressor.finish = archive_compressor_program_finish;
+	a->compressor.write = tk_archive_compressor_program_write;
+	a->compressor.finish = tk_archive_compressor_program_finish;
 
 	a->compressor.data = state;
 	return (0);
@@ -227,14 +227,14 @@ restart_write:
  * Write data to the compressed stream.
  */
 static int
-archive_compressor_program_write(struct archive_write *a, const void *buff,
+tk_archive_compressor_program_write(struct archive_write *a, const void *buff,
     size_t length)
 {
 	ssize_t ret;
 	const char *buf;
 
 	if (a->client_writer == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "No write callback is registered?  "
 		    "This is probably an internal programming error.");
 		return (ARCHIVE_FATAL);
@@ -244,7 +244,7 @@ archive_compressor_program_write(struct archive_write *a, const void *buff,
 	while (length > 0) {
 		ret = child_write(a, buf, length);
 		if (ret == -1 || ret == 0) {
-			archive_set_error(&a->archive, EIO,
+			tk_archive_set_error(&a->archive, EIO,
 			    "Can't write to filter");
 			return (ARCHIVE_FATAL);
 		}
@@ -261,7 +261,7 @@ archive_compressor_program_write(struct archive_write *a, const void *buff,
  * Finish the compression...
  */
 static int
-archive_compressor_program_finish(struct archive_write *a)
+tk_archive_compressor_program_finish(struct archive_write *a)
 {
 	int ret, status;
 	ssize_t bytes_read, bytes_written;
@@ -270,7 +270,7 @@ archive_compressor_program_finish(struct archive_write *a)
 	state = (struct private_data *)a->compressor.data;
 	ret = 0;
 	if (a->client_writer == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "No write callback is registered?  "
 		    "This is probably an internal programming error.");
 		ret = ARCHIVE_FATAL;
@@ -294,7 +294,7 @@ archive_compressor_program_finish(struct archive_write *a)
 			break;
 
 		if (bytes_read == -1) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Read from filter failed unexpectedly.");
 			ret = ARCHIVE_FATAL;
 			goto cleanup;
@@ -328,7 +328,7 @@ cleanup:
 		continue;
 
 	if (status != 0) {
-		archive_set_error(&a->archive, EIO,
+		tk_archive_set_error(&a->archive, EIO,
 		    "Filter exited with failure.");
 		ret = ARCHIVE_FATAL;
 	}

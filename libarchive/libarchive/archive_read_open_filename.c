@@ -72,14 +72,14 @@ static off_t	file_skip(struct archive *, void *, off_t request);
 #endif
 
 int
-archive_read_open_file(struct archive *a, const char *filename,
+tk_archive_read_open_file(struct archive *a, const char *filename,
     size_t block_size)
 {
-	return (archive_read_open_filename(a, filename, block_size));
+	return (tk_archive_read_open_filename(a, filename, block_size));
 }
 
 int
-archive_read_open_filename(struct archive *a, const char *filename,
+tk_archive_read_open_filename(struct archive *a, const char *filename,
     size_t block_size)
 {
 	struct stat st;
@@ -87,9 +87,9 @@ archive_read_open_filename(struct archive *a, const char *filename,
 	void *b;
 	int fd;
 
-	archive_clear_error(a);
+	tk_archive_clear_error(a);
 	if (filename == NULL || filename[0] == '\0') {
-		/* We used to invoke archive_read_open_fd(a,0,block_size)
+		/* We used to invoke tk_archive_read_open_fd(a,0,block_size)
 		 * here, but that doesn't (and shouldn't) handle the
 		 * end-of-file flush when reading stdout from a pipe.
 		 * Basically, read_open_fd() is intended for folks who
@@ -105,13 +105,13 @@ archive_read_open_filename(struct archive *a, const char *filename,
 	} else {
 		fd = open(filename, O_RDONLY | O_BINARY);
 		if (fd < 0) {
-			archive_set_error(a, errno,
+			tk_archive_set_error(a, errno,
 			    "Failed to open '%s'", filename);
 			return (ARCHIVE_FATAL);
 		}
 	}
 	if (fstat(fd, &st) != 0) {
-		archive_set_error(a, errno, "Can't stat '%s'", filename);
+		tk_archive_set_error(a, errno, "Can't stat '%s'", filename);
 		return (ARCHIVE_FATAL);
 	}
 
@@ -119,7 +119,7 @@ archive_read_open_filename(struct archive *a, const char *filename,
 	    sizeof(*mine) + strlen(filename));
 	b = malloc(block_size);
 	if (mine == NULL || b == NULL) {
-		archive_set_error(a, ENOMEM, "No memory");
+		tk_archive_set_error(a, ENOMEM, "No memory");
 		free(mine);
 		free(b);
 		return (ARCHIVE_FATAL);
@@ -133,7 +133,7 @@ archive_read_open_filename(struct archive *a, const char *filename,
 	/* If we're reading a file from disk, ensure that we don't
 	   overwrite it with an extracted file. */
 	if (S_ISREG(st.st_mode)) {
-		archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
+		tk_archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
 		/*
 		 * Enabling skip here is a performance optimization
 		 * for anything that supports lseek().  On FreeBSD
@@ -149,7 +149,7 @@ archive_read_open_filename(struct archive *a, const char *filename,
 		 */
 		mine->can_skip = 1;
 	}
-	return (archive_read_open2(a, mine,
+	return (tk_archive_read_open2(a, mine,
 		NULL, file_read, file_skip, file_close));
 }
 
@@ -166,9 +166,9 @@ file_read(struct archive *a, void *client_data, const void **buff)
 			if (errno == EINTR)
 				continue;
 			else if (mine->filename[0] == '\0')
-				archive_set_error(a, errno, "Error reading stdin");
+				tk_archive_set_error(a, errno, "Error reading stdin");
 			else
-				archive_set_error(a, errno, "Error reading '%s'",
+				tk_archive_set_error(a, errno, "Error reading '%s'",
 				    mine->filename);
 		}
 		return (bytes_read);
@@ -225,9 +225,9 @@ file_skip(struct archive *a, void *client_data, off_t request)
 			 * Should never get here, since lseek() on stdin ought
 			 * to return an ESPIPE error.
 			 */
-			archive_set_error(a, errno, "Error seeking in stdin");
+			tk_archive_set_error(a, errno, "Error seeking in stdin");
 		else
-			archive_set_error(a, errno, "Error seeking in '%s'",
+			tk_archive_set_error(a, errno, "Error seeking in '%s'",
 			    mine->filename);
 		return (-1);
 	}

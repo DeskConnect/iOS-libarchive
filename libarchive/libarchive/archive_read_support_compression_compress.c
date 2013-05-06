@@ -141,7 +141,7 @@ static int	getbits(struct archive_read_filter *, int n);
 static int	next_code(struct archive_read_filter *);
 
 int
-archive_read_support_compression_compress(struct archive *_a)
+tk_archive_read_support_compression_compress(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct archive_read_filter_bidder *bidder = __archive_read_get_bidder(a);
@@ -214,7 +214,7 @@ compress_bidder_init(struct archive_read_filter *self)
 	if (state == NULL || out_block == NULL) {
 		free(out_block);
 		free(state);
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Can't allocate data for %s decompression",
 		    self->name);
 		return (ARCHIVE_FATAL);
@@ -363,7 +363,7 @@ next_code(struct archive_read_filter *self)
 
 	if (code > state->free_ent) {
 		/* An invalid code is a fatal error. */
-		archive_set_error(&(self->archive->archive), -1,
+		tk_archive_set_error(&(self->archive->archive), -1,
 		    "Invalid compressed data");
 		return (ARCHIVE_FATAL);
 	}

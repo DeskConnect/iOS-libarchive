@@ -73,7 +73,7 @@ static int	bzip2_reader_init(struct archive_read_filter *);
 static int	bzip2_reader_free(struct archive_read_filter_bidder *);
 
 int
-archive_read_support_compression_bzip2(struct archive *_a)
+tk_archive_read_support_compression_bzip2(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct archive_read_filter_bidder *reader = __archive_read_get_bidder(a);
@@ -89,7 +89,7 @@ archive_read_support_compression_bzip2(struct archive *_a)
 #if defined(HAVE_BZLIB_H) && defined(BZ_CONFIG_ERROR)
 	return (ARCHIVE_OK);
 #else
-	archive_set_error(_a, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(_a, ARCHIVE_ERRNO_MISC,
 	    "Using external bunzip2 program");
 	return (ARCHIVE_WARN);
 #endif
@@ -186,7 +186,7 @@ bzip2_reader_init(struct archive_read_filter *self)
 	state = (struct private_data *)calloc(sizeof(*state), 1);
 	out_block = (unsigned char *)malloc(out_block_size);
 	if (self == NULL || state == NULL || out_block == NULL) {
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Can't allocate data for bzip2 decompression");
 		free(out_block);
 		free(state);
@@ -261,7 +261,7 @@ bzip2_filter_read(struct archive_read_filter *self, const void **p)
 					detail = "mis-compiled library";
 					break;
 				}
-				archive_set_error(&self->archive->archive, err,
+				tk_archive_set_error(&self->archive->archive, err,
 				    "Internal error initializing decompressor%s%s",
 				    detail == NULL ? "" : ": ",
 				    detail);
@@ -298,7 +298,7 @@ bzip2_filter_read(struct archive_read_filter *self, const void **p)
 			case BZ_OK:
 				break;
 			default:
-				archive_set_error(&(self->archive->archive),
+				tk_archive_set_error(&(self->archive->archive),
 					  ARCHIVE_ERRNO_MISC,
 					  "Failed to clean up decompressor");
 				return (ARCHIVE_FATAL);
@@ -315,7 +315,7 @@ bzip2_filter_read(struct archive_read_filter *self, const void **p)
 			}
 			break;
 		default: /* Return an error. */
-			archive_set_error(&self->archive->archive,
+			tk_archive_set_error(&self->archive->archive,
 			    ARCHIVE_ERRNO_MISC, "bzip decompression failed");
 			return (ARCHIVE_FATAL);
 		}
@@ -338,7 +338,7 @@ bzip2_filter_close(struct archive_read_filter *self)
 		case BZ_OK:
 			break;
 		default:
-			archive_set_error(&self->archive->archive,
+			tk_archive_set_error(&self->archive->archive,
 					  ARCHIVE_ERRNO_MISC,
 					  "Failed to clean up decompressor");
 			ret = ARCHIVE_FATAL;

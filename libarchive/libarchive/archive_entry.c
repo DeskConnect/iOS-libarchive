@@ -128,7 +128,7 @@ static void	next_field_w(const wchar_t **wp, const wchar_t **start,
 static int	prefix_w(const wchar_t *start, const wchar_t *end,
 		    const wchar_t *test);
 static void
-archive_entry_acl_add_entry_w_len(struct archive_entry *entry, int type,
+tk_archive_entry_acl_add_entry_w_len(struct archive_entry *entry, int type,
 		    int permset, int tag, int id, const wchar_t *name, size_t);
 
 
@@ -165,8 +165,8 @@ aes_clean(struct aes *aes)
 		free((wchar_t *)(uintptr_t)aes->aes_wcs);
 		aes->aes_wcs = NULL;
 	}
-	archive_string_free(&(aes->aes_mbs));
-	archive_string_free(&(aes->aes_utf8));
+	tk_archive_string_free(&(aes->aes_mbs));
+	tk_archive_string_free(&(aes->aes_utf8));
 	aes->aes_set = 0;
 }
 
@@ -176,8 +176,8 @@ aes_copy(struct aes *dest, struct aes *src)
 	wchar_t *wp;
 
 	dest->aes_set = src->aes_set;
-	archive_string_copy(&(dest->aes_mbs), &(src->aes_mbs));
-	archive_string_copy(&(dest->aes_utf8), &(src->aes_utf8));
+	tk_archive_string_copy(&(dest->aes_mbs), &(src->aes_mbs));
+	tk_archive_string_copy(&(dest->aes_utf8), &(src->aes_utf8));
 
 	if (src->aes_wcs != NULL) {
 		wp = (wchar_t *)malloc((wcslen(src->aes_wcs) + 1)
@@ -195,7 +195,7 @@ aes_get_utf8(struct aes *aes)
 	if (aes->aes_set & AES_SET_UTF8)
 		return (aes->aes_utf8.s);
 	if ((aes->aes_set & AES_SET_WCS)
-	    && archive_strappend_w_utf8(&(aes->aes_utf8), aes->aes_wcs) != NULL) {
+	    && tk_archive_strappend_w_utf8(&(aes->aes_utf8), aes->aes_wcs) != NULL) {
 		aes->aes_set |= AES_SET_UTF8;
 		return (aes->aes_utf8.s);
 	}
@@ -210,7 +210,7 @@ aes_get_mbs(struct aes *aes)
 		return (aes->aes_mbs.s);
 	/* If there's a WCS form, try converting with the native locale. */
 	if ((aes->aes_set & AES_SET_WCS)
-	    && archive_strappend_w_mbs(&(aes->aes_mbs), aes->aes_wcs) != NULL) {
+	    && tk_archive_strappend_w_mbs(&(aes->aes_mbs), aes->aes_wcs) != NULL) {
 		aes->aes_set |= AES_SET_MBS;
 		return (aes->aes_mbs.s);
 	}
@@ -272,8 +272,8 @@ aes_copy_mbs(struct aes *aes, const char *mbs)
 		return (0);
 	}
 	aes->aes_set = AES_SET_MBS; /* Only MBS form is set now. */
-	archive_strcpy(&(aes->aes_mbs), mbs);
-	archive_string_empty(&(aes->aes_utf8));
+	tk_archive_strcpy(&(aes->aes_mbs), mbs);
+	tk_archive_string_empty(&(aes->aes_utf8));
 	if (aes->aes_wcs) {
 		free((wchar_t *)(uintptr_t)aes->aes_wcs);
 		aes->aes_wcs = NULL;
@@ -300,10 +300,10 @@ aes_update_utf8(struct aes *aes, const char *utf8)
 	}
 
 	/* Save the UTF8 string. */
-	archive_strcpy(&(aes->aes_utf8), utf8);
+	tk_archive_strcpy(&(aes->aes_utf8), utf8);
 
 	/* Empty the mbs and wcs strings. */
-	archive_string_empty(&(aes->aes_mbs));
+	tk_archive_string_empty(&(aes->aes_mbs));
 	if (aes->aes_wcs) {
 		free((wchar_t *)(uintptr_t)aes->aes_wcs);
 		aes->aes_wcs = NULL;
@@ -324,7 +324,7 @@ aes_update_utf8(struct aes *aes, const char *utf8)
 	aes->aes_set = AES_SET_UTF8 | AES_SET_WCS; /* Both UTF8 and WCS set. */
 
 	/* Try converting WCS to MBS, return false on failure. */
-	if (archive_strappend_w_mbs(&(aes->aes_mbs), aes->aes_wcs) == NULL)
+	if (tk_archive_strappend_w_mbs(&(aes->aes_mbs), aes->aes_wcs) == NULL)
 		return (0);
 	aes->aes_set = AES_SET_UTF8 | AES_SET_WCS | AES_SET_MBS;
 
@@ -348,8 +348,8 @@ aes_copy_wcs_len(struct aes *aes, const wchar_t *wcs, size_t len)
 		return (0);
 	}
 	aes->aes_set = AES_SET_WCS; /* Only WCS form set. */
-	archive_string_empty(&(aes->aes_mbs));
-	archive_string_empty(&(aes->aes_utf8));
+	tk_archive_string_empty(&(aes->aes_mbs));
+	tk_archive_string_empty(&(aes->aes_utf8));
 	if (aes->aes_wcs) {
 		free((wchar_t *)(uintptr_t)aes->aes_wcs);
 		aes->aes_wcs = NULL;
@@ -370,7 +370,7 @@ aes_copy_wcs_len(struct aes *aes, const wchar_t *wcs, size_t len)
  ****************************************************************************/
 
 struct archive_entry *
-archive_entry_clear(struct archive_entry *entry)
+tk_archive_entry_clear(struct archive_entry *entry)
 {
 	if (entry == NULL)
 		return (NULL);
@@ -381,15 +381,15 @@ archive_entry_clear(struct archive_entry *entry)
 	aes_clean(&entry->ae_sourcepath);
 	aes_clean(&entry->ae_symlink);
 	aes_clean(&entry->ae_uname);
-	archive_entry_acl_clear(entry);
-	archive_entry_xattr_clear(entry);
+	tk_archive_entry_acl_clear(entry);
+	tk_archive_entry_xattr_clear(entry);
 	free(entry->stat);
 	memset(entry, 0, sizeof(*entry));
 	return entry;
 }
 
 struct archive_entry *
-archive_entry_clone(struct archive_entry *entry)
+tk_archive_entry_clone(struct archive_entry *entry)
 {
 	struct archive_entry *entry2;
 	struct ae_acl *ap, *ap2;
@@ -426,7 +426,7 @@ archive_entry_clone(struct archive_entry *entry)
 	/* Copy xattr data over. */
 	xp = entry->xattr_head;
 	while (xp != NULL) {
-		archive_entry_xattr_add_entry(entry2,
+		tk_archive_entry_xattr_add_entry(entry2,
 		    xp->name, xp->value, xp->size);
 		xp = xp->next;
 	}
@@ -435,14 +435,14 @@ archive_entry_clone(struct archive_entry *entry)
 }
 
 void
-archive_entry_free(struct archive_entry *entry)
+tk_archive_entry_free(struct archive_entry *entry)
 {
-	archive_entry_clear(entry);
+	tk_archive_entry_clear(entry);
 	free(entry);
 }
 
 struct archive_entry *
-archive_entry_new(void)
+tk_archive_entry_new(void)
 {
 	struct archive_entry *entry;
 
@@ -458,61 +458,61 @@ archive_entry_new(void)
  */
 
 time_t
-archive_entry_atime(struct archive_entry *entry)
+tk_archive_entry_atime(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_atime);
 }
 
 long
-archive_entry_atime_nsec(struct archive_entry *entry)
+tk_archive_entry_atime_nsec(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_atime_nsec);
 }
 
 int
-archive_entry_atime_is_set(struct archive_entry *entry)
+tk_archive_entry_atime_is_set(struct archive_entry *entry)
 {
 	return (entry->ae_set & AE_SET_ATIME);
 }
 
 time_t
-archive_entry_birthtime(struct archive_entry *entry)
+tk_archive_entry_birthtime(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_birthtime);
 }
 
 long
-archive_entry_birthtime_nsec(struct archive_entry *entry)
+tk_archive_entry_birthtime_nsec(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_birthtime_nsec);
 }
 
 int
-archive_entry_birthtime_is_set(struct archive_entry *entry)
+tk_archive_entry_birthtime_is_set(struct archive_entry *entry)
 {
 	return (entry->ae_set & AE_SET_BIRTHTIME);
 }
 
 time_t
-archive_entry_ctime(struct archive_entry *entry)
+tk_archive_entry_ctime(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_ctime);
 }
 
 int
-archive_entry_ctime_is_set(struct archive_entry *entry)
+tk_archive_entry_ctime_is_set(struct archive_entry *entry)
 {
 	return (entry->ae_set & AE_SET_CTIME);
 }
 
 long
-archive_entry_ctime_nsec(struct archive_entry *entry)
+tk_archive_entry_ctime_nsec(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_ctime_nsec);
 }
 
 dev_t
-archive_entry_dev(struct archive_entry *entry)
+tk_archive_entry_dev(struct archive_entry *entry)
 {
 	if (entry->ae_stat.aest_dev_is_broken_down)
 		return ae_makedev(entry->ae_stat.aest_devmajor,
@@ -522,7 +522,7 @@ archive_entry_dev(struct archive_entry *entry)
 }
 
 dev_t
-archive_entry_devmajor(struct archive_entry *entry)
+tk_archive_entry_devmajor(struct archive_entry *entry)
 {
 	if (entry->ae_stat.aest_dev_is_broken_down)
 		return (entry->ae_stat.aest_devmajor);
@@ -531,7 +531,7 @@ archive_entry_devmajor(struct archive_entry *entry)
 }
 
 dev_t
-archive_entry_devminor(struct archive_entry *entry)
+tk_archive_entry_devminor(struct archive_entry *entry)
 {
 	if (entry->ae_stat.aest_dev_is_broken_down)
 		return (entry->ae_stat.aest_devminor);
@@ -540,13 +540,13 @@ archive_entry_devminor(struct archive_entry *entry)
 }
 
 mode_t
-archive_entry_filetype(struct archive_entry *entry)
+tk_archive_entry_filetype(struct archive_entry *entry)
 {
 	return (AE_IFMT & entry->ae_stat.aest_mode);
 }
 
 void
-archive_entry_fflags(struct archive_entry *entry,
+tk_archive_entry_fflags(struct archive_entry *entry,
     unsigned long *set, unsigned long *clear)
 {
 	*set = entry->ae_fflags_set;
@@ -563,7 +563,7 @@ archive_entry_fflags(struct archive_entry *entry,
  * conversions are platform-specific (see below).
  */
 const char *
-archive_entry_fflags_text(struct archive_entry *entry)
+tk_archive_entry_fflags_text(struct archive_entry *entry)
 {
 	const char *f;
 	char *p;
@@ -586,25 +586,25 @@ archive_entry_fflags_text(struct archive_entry *entry)
 }
 
 gid_t
-archive_entry_gid(struct archive_entry *entry)
+tk_archive_entry_gid(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_gid);
 }
 
 const char *
-archive_entry_gname(struct archive_entry *entry)
+tk_archive_entry_gname(struct archive_entry *entry)
 {
 	return (aes_get_mbs(&entry->ae_gname));
 }
 
 const wchar_t *
-archive_entry_gname_w(struct archive_entry *entry)
+tk_archive_entry_gname_w(struct archive_entry *entry)
 {
 	return (aes_get_wcs(&entry->ae_gname));
 }
 
 const char *
-archive_entry_hardlink(struct archive_entry *entry)
+tk_archive_entry_hardlink(struct archive_entry *entry)
 {
 	if (entry->ae_set & AE_SET_HARDLINK)
 		return (aes_get_mbs(&entry->ae_hardlink));
@@ -612,7 +612,7 @@ archive_entry_hardlink(struct archive_entry *entry)
 }
 
 const wchar_t *
-archive_entry_hardlink_w(struct archive_entry *entry)
+tk_archive_entry_hardlink_w(struct archive_entry *entry)
 {
 	if (entry->ae_set & AE_SET_HARDLINK)
 		return (aes_get_wcs(&entry->ae_hardlink));
@@ -620,61 +620,61 @@ archive_entry_hardlink_w(struct archive_entry *entry)
 }
 
 ino_t
-archive_entry_ino(struct archive_entry *entry)
+tk_archive_entry_ino(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_ino);
 }
 
 int64_t
-archive_entry_ino64(struct archive_entry *entry)
+tk_archive_entry_ino64(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_ino);
 }
 
 mode_t
-archive_entry_mode(struct archive_entry *entry)
+tk_archive_entry_mode(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_mode);
 }
 
 time_t
-archive_entry_mtime(struct archive_entry *entry)
+tk_archive_entry_mtime(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_mtime);
 }
 
 long
-archive_entry_mtime_nsec(struct archive_entry *entry)
+tk_archive_entry_mtime_nsec(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_mtime_nsec);
 }
 
 int
-archive_entry_mtime_is_set(struct archive_entry *entry)
+tk_archive_entry_mtime_is_set(struct archive_entry *entry)
 {
 	return (entry->ae_set & AE_SET_MTIME);
 }
 
 unsigned int
-archive_entry_nlink(struct archive_entry *entry)
+tk_archive_entry_nlink(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_nlink);
 }
 
 const char *
-archive_entry_pathname(struct archive_entry *entry)
+tk_archive_entry_pathname(struct archive_entry *entry)
 {
 	return (aes_get_mbs(&entry->ae_pathname));
 }
 
 const wchar_t *
-archive_entry_pathname_w(struct archive_entry *entry)
+tk_archive_entry_pathname_w(struct archive_entry *entry)
 {
 	return (aes_get_wcs(&entry->ae_pathname));
 }
 
 dev_t
-archive_entry_rdev(struct archive_entry *entry)
+tk_archive_entry_rdev(struct archive_entry *entry)
 {
 	if (entry->ae_stat.aest_rdev_is_broken_down)
 		return ae_makedev(entry->ae_stat.aest_rdevmajor,
@@ -684,7 +684,7 @@ archive_entry_rdev(struct archive_entry *entry)
 }
 
 dev_t
-archive_entry_rdevmajor(struct archive_entry *entry)
+tk_archive_entry_rdevmajor(struct archive_entry *entry)
 {
 	if (entry->ae_stat.aest_rdev_is_broken_down)
 		return (entry->ae_stat.aest_rdevmajor);
@@ -693,7 +693,7 @@ archive_entry_rdevmajor(struct archive_entry *entry)
 }
 
 dev_t
-archive_entry_rdevminor(struct archive_entry *entry)
+tk_archive_entry_rdevminor(struct archive_entry *entry)
 {
 	if (entry->ae_stat.aest_rdev_is_broken_down)
 		return (entry->ae_stat.aest_rdevminor);
@@ -702,25 +702,25 @@ archive_entry_rdevminor(struct archive_entry *entry)
 }
 
 int64_t
-archive_entry_size(struct archive_entry *entry)
+tk_archive_entry_size(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_size);
 }
 
 int
-archive_entry_size_is_set(struct archive_entry *entry)
+tk_archive_entry_size_is_set(struct archive_entry *entry)
 {
 	return (entry->ae_set & AE_SET_SIZE);
 }
 
 const char *
-archive_entry_sourcepath(struct archive_entry *entry)
+tk_archive_entry_sourcepath(struct archive_entry *entry)
 {
 	return (aes_get_mbs(&entry->ae_sourcepath));
 }
 
 const char *
-archive_entry_symlink(struct archive_entry *entry)
+tk_archive_entry_symlink(struct archive_entry *entry)
 {
 	if (entry->ae_set & AE_SET_SYMLINK)
 		return (aes_get_mbs(&entry->ae_symlink));
@@ -728,7 +728,7 @@ archive_entry_symlink(struct archive_entry *entry)
 }
 
 const wchar_t *
-archive_entry_symlink_w(struct archive_entry *entry)
+tk_archive_entry_symlink_w(struct archive_entry *entry)
 {
 	if (entry->ae_set & AE_SET_SYMLINK)
 		return (aes_get_wcs(&entry->ae_symlink));
@@ -736,19 +736,19 @@ archive_entry_symlink_w(struct archive_entry *entry)
 }
 
 uid_t
-archive_entry_uid(struct archive_entry *entry)
+tk_archive_entry_uid(struct archive_entry *entry)
 {
 	return (entry->ae_stat.aest_uid);
 }
 
 const char *
-archive_entry_uname(struct archive_entry *entry)
+tk_archive_entry_uname(struct archive_entry *entry)
 {
 	return (aes_get_mbs(&entry->ae_uname));
 }
 
 const wchar_t *
-archive_entry_uname_w(struct archive_entry *entry)
+tk_archive_entry_uname_w(struct archive_entry *entry)
 {
 	return (aes_get_wcs(&entry->ae_uname));
 }
@@ -758,7 +758,7 @@ archive_entry_uname_w(struct archive_entry *entry)
  */
 
 void
-archive_entry_set_filetype(struct archive_entry *entry, unsigned int type)
+tk_archive_entry_set_filetype(struct archive_entry *entry, unsigned int type)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_mode &= ~AE_IFMT;
@@ -766,7 +766,7 @@ archive_entry_set_filetype(struct archive_entry *entry, unsigned int type)
 }
 
 void
-archive_entry_set_fflags(struct archive_entry *entry,
+tk_archive_entry_set_fflags(struct archive_entry *entry,
     unsigned long set, unsigned long clear)
 {
 	aes_clean(&entry->ae_fflags_text);
@@ -775,7 +775,7 @@ archive_entry_set_fflags(struct archive_entry *entry,
 }
 
 const char *
-archive_entry_copy_fflags_text(struct archive_entry *entry,
+tk_archive_entry_copy_fflags_text(struct archive_entry *entry,
     const char *flags)
 {
 	aes_copy_mbs(&entry->ae_fflags_text, flags);
@@ -784,7 +784,7 @@ archive_entry_copy_fflags_text(struct archive_entry *entry,
 }
 
 const wchar_t *
-archive_entry_copy_fflags_text_w(struct archive_entry *entry,
+tk_archive_entry_copy_fflags_text_w(struct archive_entry *entry,
     const wchar_t *flags)
 {
 	aes_copy_wcs(&entry->ae_fflags_text, flags);
@@ -793,52 +793,52 @@ archive_entry_copy_fflags_text_w(struct archive_entry *entry,
 }
 
 void
-archive_entry_set_gid(struct archive_entry *entry, gid_t g)
+tk_archive_entry_set_gid(struct archive_entry *entry, gid_t g)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_gid = g;
 }
 
 void
-archive_entry_set_gname(struct archive_entry *entry, const char *name)
+tk_archive_entry_set_gname(struct archive_entry *entry, const char *name)
 {
 	aes_set_mbs(&entry->ae_gname, name);
 }
 
 void
-archive_entry_copy_gname(struct archive_entry *entry, const char *name)
+tk_archive_entry_copy_gname(struct archive_entry *entry, const char *name)
 {
 	aes_copy_mbs(&entry->ae_gname, name);
 }
 
 void
-archive_entry_copy_gname_w(struct archive_entry *entry, const wchar_t *name)
+tk_archive_entry_copy_gname_w(struct archive_entry *entry, const wchar_t *name)
 {
 	aes_copy_wcs(&entry->ae_gname, name);
 }
 
 int
-archive_entry_update_gname_utf8(struct archive_entry *entry, const char *name)
+tk_archive_entry_update_gname_utf8(struct archive_entry *entry, const char *name)
 {
 	return (aes_update_utf8(&entry->ae_gname, name));
 }
 
 void
-archive_entry_set_ino(struct archive_entry *entry, unsigned long ino)
+tk_archive_entry_set_ino(struct archive_entry *entry, unsigned long ino)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_ino = ino;
 }
 
 void
-archive_entry_set_ino64(struct archive_entry *entry, int64_t ino)
+tk_archive_entry_set_ino64(struct archive_entry *entry, int64_t ino)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_ino = ino;
 }
 
 void
-archive_entry_set_hardlink(struct archive_entry *entry, const char *target)
+tk_archive_entry_set_hardlink(struct archive_entry *entry, const char *target)
 {
 	aes_set_mbs(&entry->ae_hardlink, target);
 	if (target != NULL)
@@ -848,7 +848,7 @@ archive_entry_set_hardlink(struct archive_entry *entry, const char *target)
 }
 
 void
-archive_entry_copy_hardlink(struct archive_entry *entry, const char *target)
+tk_archive_entry_copy_hardlink(struct archive_entry *entry, const char *target)
 {
 	aes_copy_mbs(&entry->ae_hardlink, target);
 	if (target != NULL)
@@ -858,7 +858,7 @@ archive_entry_copy_hardlink(struct archive_entry *entry, const char *target)
 }
 
 void
-archive_entry_copy_hardlink_w(struct archive_entry *entry, const wchar_t *target)
+tk_archive_entry_copy_hardlink_w(struct archive_entry *entry, const wchar_t *target)
 {
 	aes_copy_wcs(&entry->ae_hardlink, target);
 	if (target != NULL)
@@ -868,7 +868,7 @@ archive_entry_copy_hardlink_w(struct archive_entry *entry, const wchar_t *target
 }
 
 int
-archive_entry_update_hardlink_utf8(struct archive_entry *entry, const char *target)
+tk_archive_entry_update_hardlink_utf8(struct archive_entry *entry, const char *target)
 {
 	if (target != NULL)
 		entry->ae_set |= AE_SET_HARDLINK;
@@ -878,7 +878,7 @@ archive_entry_update_hardlink_utf8(struct archive_entry *entry, const char *targ
 }
 
 void
-archive_entry_set_atime(struct archive_entry *entry, time_t t, long ns)
+tk_archive_entry_set_atime(struct archive_entry *entry, time_t t, long ns)
 {
 	entry->stat_valid = 0;
 	entry->ae_set |= AE_SET_ATIME;
@@ -887,14 +887,14 @@ archive_entry_set_atime(struct archive_entry *entry, time_t t, long ns)
 }
 
 void
-archive_entry_unset_atime(struct archive_entry *entry)
+tk_archive_entry_unset_atime(struct archive_entry *entry)
 {
-	archive_entry_set_atime(entry, 0, 0);
+	tk_archive_entry_set_atime(entry, 0, 0);
 	entry->ae_set &= ~AE_SET_ATIME;
 }
 
 void
-archive_entry_set_birthtime(struct archive_entry *entry, time_t m, long ns)
+tk_archive_entry_set_birthtime(struct archive_entry *entry, time_t m, long ns)
 {
 	entry->stat_valid = 0;
 	entry->ae_set |= AE_SET_BIRTHTIME;
@@ -903,14 +903,14 @@ archive_entry_set_birthtime(struct archive_entry *entry, time_t m, long ns)
 }
 
 void
-archive_entry_unset_birthtime(struct archive_entry *entry)
+tk_archive_entry_unset_birthtime(struct archive_entry *entry)
 {
-	archive_entry_set_birthtime(entry, 0, 0);
+	tk_archive_entry_set_birthtime(entry, 0, 0);
 	entry->ae_set &= ~AE_SET_BIRTHTIME;
 }
 
 void
-archive_entry_set_ctime(struct archive_entry *entry, time_t t, long ns)
+tk_archive_entry_set_ctime(struct archive_entry *entry, time_t t, long ns)
 {
 	entry->stat_valid = 0;
 	entry->ae_set |= AE_SET_CTIME;
@@ -919,14 +919,14 @@ archive_entry_set_ctime(struct archive_entry *entry, time_t t, long ns)
 }
 
 void
-archive_entry_unset_ctime(struct archive_entry *entry)
+tk_archive_entry_unset_ctime(struct archive_entry *entry)
 {
-	archive_entry_set_ctime(entry, 0, 0);
+	tk_archive_entry_set_ctime(entry, 0, 0);
 	entry->ae_set &= ~AE_SET_CTIME;
 }
 
 void
-archive_entry_set_dev(struct archive_entry *entry, dev_t d)
+tk_archive_entry_set_dev(struct archive_entry *entry, dev_t d)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_dev_is_broken_down = 0;
@@ -934,7 +934,7 @@ archive_entry_set_dev(struct archive_entry *entry, dev_t d)
 }
 
 void
-archive_entry_set_devmajor(struct archive_entry *entry, dev_t m)
+tk_archive_entry_set_devmajor(struct archive_entry *entry, dev_t m)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_dev_is_broken_down = 1;
@@ -942,7 +942,7 @@ archive_entry_set_devmajor(struct archive_entry *entry, dev_t m)
 }
 
 void
-archive_entry_set_devminor(struct archive_entry *entry, dev_t m)
+tk_archive_entry_set_devminor(struct archive_entry *entry, dev_t m)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_dev_is_broken_down = 1;
@@ -951,7 +951,7 @@ archive_entry_set_devminor(struct archive_entry *entry, dev_t m)
 
 /* Set symlink if symlink is already set, else set hardlink. */
 void
-archive_entry_set_link(struct archive_entry *entry, const char *target)
+tk_archive_entry_set_link(struct archive_entry *entry, const char *target)
 {
 	if (entry->ae_set & AE_SET_SYMLINK)
 		aes_set_mbs(&entry->ae_symlink, target);
@@ -961,7 +961,7 @@ archive_entry_set_link(struct archive_entry *entry, const char *target)
 
 /* Set symlink if symlink is already set, else set hardlink. */
 void
-archive_entry_copy_link(struct archive_entry *entry, const char *target)
+tk_archive_entry_copy_link(struct archive_entry *entry, const char *target)
 {
 	if (entry->ae_set & AE_SET_SYMLINK)
 		aes_copy_mbs(&entry->ae_symlink, target);
@@ -971,7 +971,7 @@ archive_entry_copy_link(struct archive_entry *entry, const char *target)
 
 /* Set symlink if symlink is already set, else set hardlink. */
 void
-archive_entry_copy_link_w(struct archive_entry *entry, const wchar_t *target)
+tk_archive_entry_copy_link_w(struct archive_entry *entry, const wchar_t *target)
 {
 	if (entry->ae_set & AE_SET_SYMLINK)
 		aes_copy_wcs(&entry->ae_symlink, target);
@@ -980,7 +980,7 @@ archive_entry_copy_link_w(struct archive_entry *entry, const wchar_t *target)
 }
 
 int
-archive_entry_update_link_utf8(struct archive_entry *entry, const char *target)
+tk_archive_entry_update_link_utf8(struct archive_entry *entry, const char *target)
 {
 	if (entry->ae_set & AE_SET_SYMLINK)
 		return (aes_update_utf8(&entry->ae_symlink, target));
@@ -989,14 +989,14 @@ archive_entry_update_link_utf8(struct archive_entry *entry, const char *target)
 }
 
 void
-archive_entry_set_mode(struct archive_entry *entry, mode_t m)
+tk_archive_entry_set_mode(struct archive_entry *entry, mode_t m)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_mode = m;
 }
 
 void
-archive_entry_set_mtime(struct archive_entry *entry, time_t m, long ns)
+tk_archive_entry_set_mtime(struct archive_entry *entry, time_t m, long ns)
 {
 	entry->stat_valid = 0;
 	entry->ae_set |= AE_SET_MTIME;
@@ -1005,45 +1005,45 @@ archive_entry_set_mtime(struct archive_entry *entry, time_t m, long ns)
 }
 
 void
-archive_entry_unset_mtime(struct archive_entry *entry)
+tk_archive_entry_unset_mtime(struct archive_entry *entry)
 {
-	archive_entry_set_mtime(entry, 0, 0);
+	tk_archive_entry_set_mtime(entry, 0, 0);
 	entry->ae_set &= ~AE_SET_MTIME;
 }
 
 void
-archive_entry_set_nlink(struct archive_entry *entry, unsigned int nlink)
+tk_archive_entry_set_nlink(struct archive_entry *entry, unsigned int nlink)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_nlink = nlink;
 }
 
 void
-archive_entry_set_pathname(struct archive_entry *entry, const char *name)
+tk_archive_entry_set_pathname(struct archive_entry *entry, const char *name)
 {
 	aes_set_mbs(&entry->ae_pathname, name);
 }
 
 void
-archive_entry_copy_pathname(struct archive_entry *entry, const char *name)
+tk_archive_entry_copy_pathname(struct archive_entry *entry, const char *name)
 {
 	aes_copy_mbs(&entry->ae_pathname, name);
 }
 
 void
-archive_entry_copy_pathname_w(struct archive_entry *entry, const wchar_t *name)
+tk_archive_entry_copy_pathname_w(struct archive_entry *entry, const wchar_t *name)
 {
 	aes_copy_wcs(&entry->ae_pathname, name);
 }
 
 int
-archive_entry_update_pathname_utf8(struct archive_entry *entry, const char *name)
+tk_archive_entry_update_pathname_utf8(struct archive_entry *entry, const char *name)
 {
 	return (aes_update_utf8(&entry->ae_pathname, name));
 }
 
 void
-archive_entry_set_perm(struct archive_entry *entry, mode_t p)
+tk_archive_entry_set_perm(struct archive_entry *entry, mode_t p)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_mode &= AE_IFMT;
@@ -1051,7 +1051,7 @@ archive_entry_set_perm(struct archive_entry *entry, mode_t p)
 }
 
 void
-archive_entry_set_rdev(struct archive_entry *entry, dev_t m)
+tk_archive_entry_set_rdev(struct archive_entry *entry, dev_t m)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_rdev = m;
@@ -1059,7 +1059,7 @@ archive_entry_set_rdev(struct archive_entry *entry, dev_t m)
 }
 
 void
-archive_entry_set_rdevmajor(struct archive_entry *entry, dev_t m)
+tk_archive_entry_set_rdevmajor(struct archive_entry *entry, dev_t m)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_rdev_is_broken_down = 1;
@@ -1067,7 +1067,7 @@ archive_entry_set_rdevmajor(struct archive_entry *entry, dev_t m)
 }
 
 void
-archive_entry_set_rdevminor(struct archive_entry *entry, dev_t m)
+tk_archive_entry_set_rdevminor(struct archive_entry *entry, dev_t m)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_rdev_is_broken_down = 1;
@@ -1075,7 +1075,7 @@ archive_entry_set_rdevminor(struct archive_entry *entry, dev_t m)
 }
 
 void
-archive_entry_set_size(struct archive_entry *entry, int64_t s)
+tk_archive_entry_set_size(struct archive_entry *entry, int64_t s)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_size = s;
@@ -1083,20 +1083,20 @@ archive_entry_set_size(struct archive_entry *entry, int64_t s)
 }
 
 void
-archive_entry_unset_size(struct archive_entry *entry)
+tk_archive_entry_unset_size(struct archive_entry *entry)
 {
-	archive_entry_set_size(entry, 0);
+	tk_archive_entry_set_size(entry, 0);
 	entry->ae_set &= ~AE_SET_SIZE;
 }
 
 void
-archive_entry_copy_sourcepath(struct archive_entry *entry, const char *path)
+tk_archive_entry_copy_sourcepath(struct archive_entry *entry, const char *path)
 {
 	aes_set_mbs(&entry->ae_sourcepath, path);
 }
 
 void
-archive_entry_set_symlink(struct archive_entry *entry, const char *linkname)
+tk_archive_entry_set_symlink(struct archive_entry *entry, const char *linkname)
 {
 	aes_set_mbs(&entry->ae_symlink, linkname);
 	if (linkname != NULL)
@@ -1106,7 +1106,7 @@ archive_entry_set_symlink(struct archive_entry *entry, const char *linkname)
 }
 
 void
-archive_entry_copy_symlink(struct archive_entry *entry, const char *linkname)
+tk_archive_entry_copy_symlink(struct archive_entry *entry, const char *linkname)
 {
 	aes_copy_mbs(&entry->ae_symlink, linkname);
 	if (linkname != NULL)
@@ -1116,7 +1116,7 @@ archive_entry_copy_symlink(struct archive_entry *entry, const char *linkname)
 }
 
 void
-archive_entry_copy_symlink_w(struct archive_entry *entry, const wchar_t *linkname)
+tk_archive_entry_copy_symlink_w(struct archive_entry *entry, const wchar_t *linkname)
 {
 	aes_copy_wcs(&entry->ae_symlink, linkname);
 	if (linkname != NULL)
@@ -1126,7 +1126,7 @@ archive_entry_copy_symlink_w(struct archive_entry *entry, const wchar_t *linknam
 }
 
 int
-archive_entry_update_symlink_utf8(struct archive_entry *entry, const char *linkname)
+tk_archive_entry_update_symlink_utf8(struct archive_entry *entry, const char *linkname)
 {
 	if (linkname != NULL)
 		entry->ae_set |= AE_SET_SYMLINK;
@@ -1136,32 +1136,32 @@ archive_entry_update_symlink_utf8(struct archive_entry *entry, const char *linkn
 }
 
 void
-archive_entry_set_uid(struct archive_entry *entry, uid_t u)
+tk_archive_entry_set_uid(struct archive_entry *entry, uid_t u)
 {
 	entry->stat_valid = 0;
 	entry->ae_stat.aest_uid = u;
 }
 
 void
-archive_entry_set_uname(struct archive_entry *entry, const char *name)
+tk_archive_entry_set_uname(struct archive_entry *entry, const char *name)
 {
 	aes_set_mbs(&entry->ae_uname, name);
 }
 
 void
-archive_entry_copy_uname(struct archive_entry *entry, const char *name)
+tk_archive_entry_copy_uname(struct archive_entry *entry, const char *name)
 {
 	aes_copy_mbs(&entry->ae_uname, name);
 }
 
 void
-archive_entry_copy_uname_w(struct archive_entry *entry, const wchar_t *name)
+tk_archive_entry_copy_uname_w(struct archive_entry *entry, const wchar_t *name)
 {
 	aes_copy_wcs(&entry->ae_uname, name);
 }
 
 int
-archive_entry_update_uname_utf8(struct archive_entry *entry, const char *name)
+tk_archive_entry_update_uname_utf8(struct archive_entry *entry, const char *name)
 {
 	return (aes_update_utf8(&entry->ae_uname, name));
 }
@@ -1176,7 +1176,7 @@ archive_entry_update_uname_utf8(struct archive_entry *entry, const char *name)
  */
 
 void
-archive_entry_acl_clear(struct archive_entry *entry)
+tk_archive_entry_acl_clear(struct archive_entry *entry)
 {
 	struct ae_acl	*ap;
 
@@ -1198,7 +1198,7 @@ archive_entry_acl_clear(struct archive_entry *entry)
  * Add a single ACL entry to the internal list of ACL data.
  */
 void
-archive_entry_acl_add_entry(struct archive_entry *entry,
+tk_archive_entry_acl_add_entry(struct archive_entry *entry,
     int type, int permset, int tag, int id, const char *name)
 {
 	struct ae_acl *ap;
@@ -1220,14 +1220,14 @@ archive_entry_acl_add_entry(struct archive_entry *entry,
  * As above, but with a wide-character name.
  */
 void
-archive_entry_acl_add_entry_w(struct archive_entry *entry,
+tk_archive_entry_acl_add_entry_w(struct archive_entry *entry,
     int type, int permset, int tag, int id, const wchar_t *name)
 {
-	archive_entry_acl_add_entry_w_len(entry, type, permset, tag, id, name, wcslen(name));
+	tk_archive_entry_acl_add_entry_w_len(entry, type, permset, tag, id, name, wcslen(name));
 }
 
 static void
-archive_entry_acl_add_entry_w_len(struct archive_entry *entry,
+tk_archive_entry_acl_add_entry_w_len(struct archive_entry *entry,
     int type, int permset, int tag, int id, const wchar_t *name, size_t len)
 {
 	struct ae_acl *ap;
@@ -1323,7 +1323,7 @@ acl_new_entry(struct archive_entry *entry,
  * Return a count of entries matching "want_type".
  */
 int
-archive_entry_acl_count(struct archive_entry *entry, int want_type)
+tk_archive_entry_acl_count(struct archive_entry *entry, int want_type)
 {
 	int count;
 	struct ae_acl *ap;
@@ -1347,11 +1347,11 @@ archive_entry_acl_count(struct archive_entry *entry, int want_type)
  * non-extended ACL entries of that type.
  */
 int
-archive_entry_acl_reset(struct archive_entry *entry, int want_type)
+tk_archive_entry_acl_reset(struct archive_entry *entry, int want_type)
 {
 	int count, cutoff;
 
-	count = archive_entry_acl_count(entry, want_type);
+	count = tk_archive_entry_acl_count(entry, want_type);
 
 	/*
 	 * If the only entries are the three standard ones,
@@ -1377,7 +1377,7 @@ archive_entry_acl_reset(struct archive_entry *entry, int want_type)
  */
 
 int
-archive_entry_acl_next(struct archive_entry *entry, int want_type, int *type,
+tk_archive_entry_acl_next(struct archive_entry *entry, int want_type, int *type,
     int *permset, int *tag, int *id, const char **name)
 {
 	*name = NULL;
@@ -1443,7 +1443,7 @@ archive_entry_acl_next(struct archive_entry *entry, int want_type, int *type,
  * the style of the generated ACL.
  */
 const wchar_t *
-archive_entry_acl_text_w(struct archive_entry *entry, int flags)
+tk_archive_entry_acl_text_w(struct archive_entry *entry, int flags)
 {
 	int count;
 	size_t length;
@@ -1724,7 +1724,7 @@ __archive_entry_acl_parse_w(struct archive_entry *entry,
 			return (ARCHIVE_WARN);
 
 		/* Add entry to the internal list. */
-		archive_entry_acl_add_entry_w_len(entry, type, permset,
+		tk_archive_entry_acl_add_entry_w_len(entry, type, permset,
 		    tag, id, name.start, name.end - name.start);
 	}
 	return (ARCHIVE_OK);
@@ -2187,16 +2187,16 @@ ae_wcstofflags(const wchar_t *s, unsigned long *setp, unsigned long *clrp)
 int
 main(int argc, char **argv)
 {
-	struct archive_entry *entry = archive_entry_new();
+	struct archive_entry *entry = tk_archive_entry_new();
 	unsigned long set, clear;
 	const wchar_t *remainder;
 
-	remainder = archive_entry_copy_fflags_text_w(entry, L"nosappnd dump archive,,,,,,,");
-	archive_entry_fflags(entry, &set, &clear);
+	remainder = tk_archive_entry_copy_fflags_text_w(entry, L"nosappnd dump archive,,,,,,,");
+	tk_archive_entry_fflags(entry, &set, &clear);
 
 	wprintf(L"set=0x%lX clear=0x%lX remainder='%ls'\n", set, clear, remainder);
 
-	wprintf(L"new flags='%s'\n", archive_entry_fflags_text(entry));
+	wprintf(L"new flags='%s'\n", tk_archive_entry_fflags_text(entry));
 	return (0);
 }
 #endif

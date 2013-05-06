@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD: src/lib/libarchive/archive_read_data_into_fd.c,v 1.16 2008/0
  * This implementation minimizes copying of data and is sparse-file aware.
  */
 int
-archive_read_data_into_fd(struct archive *a, int fd)
+tk_archive_read_data_into_fd(struct archive *a, int fd)
 {
 	int r;
 	const void *buff;
@@ -60,14 +60,14 @@ archive_read_data_into_fd(struct archive *a, int fd)
 	total_written = 0;
 	output_offset = 0;
 
-	while ((r = archive_read_data_block(a, &buff, &size, &offset)) ==
+	while ((r = tk_archive_read_data_block(a, &buff, &size, &offset)) ==
 	    ARCHIVE_OK) {
 		const char *p = buff;
 		if (offset > output_offset) {
 			output_offset = lseek(fd,
 			    offset - output_offset, SEEK_CUR);
 			if (output_offset != offset) {
-				archive_set_error(a, errno, "Seek error");
+				tk_archive_set_error(a, errno, "Seek error");
 				return (ARCHIVE_FATAL);
 			}
 		}
@@ -77,7 +77,7 @@ archive_read_data_into_fd(struct archive *a, int fd)
 				bytes_to_write = MAX_WRITE;
 			bytes_written = write(fd, p, bytes_to_write);
 			if (bytes_written < 0) {
-				archive_set_error(a, errno, "Write error");
+				tk_archive_set_error(a, errno, "Write error");
 				return (ARCHIVE_FATAL);
 			}
 			output_offset += bytes_written;

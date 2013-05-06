@@ -66,18 +66,18 @@ static off_t	file_skip(struct archive *, void *, off_t request);
 #endif
 
 int
-archive_read_open_FILE(struct archive *a, FILE *f)
+tk_archive_read_open_FILE(struct archive *a, FILE *f)
 {
 	struct stat st;
 	struct read_FILE_data *mine;
 	size_t block_size = 128 * 1024;
 	void *b;
 
-	archive_clear_error(a);
+	tk_archive_clear_error(a);
 	mine = (struct read_FILE_data *)malloc(sizeof(*mine));
 	b = malloc(block_size);
 	if (mine == NULL || b == NULL) {
-		archive_set_error(a, ENOMEM, "No memory");
+		tk_archive_set_error(a, ENOMEM, "No memory");
 		free(mine);
 		free(b);
 		return (ARCHIVE_FATAL);
@@ -91,7 +91,7 @@ archive_read_open_FILE(struct archive *a, FILE *f)
 	 * streams, some of which don't support fileno()).)
 	 */
 	if (fstat(fileno(mine->f), &st) == 0 && S_ISREG(st.st_mode)) {
-		archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
+		tk_archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
 		/* Enable the seek optimization only for regular files. */
 		mine->can_skip = 1;
 	} else
@@ -101,7 +101,7 @@ archive_read_open_FILE(struct archive *a, FILE *f)
 	setmode(fileno(mine->f), O_BINARY);
 #endif
 
-	return (archive_read_open2(a, mine, NULL, file_read,
+	return (tk_archive_read_open2(a, mine, NULL, file_read,
 		    file_skip, file_close));
 }
 
@@ -114,7 +114,7 @@ file_read(struct archive *a, void *client_data, const void **buff)
 	*buff = mine->buffer;
 	bytes_read = fread(mine->buffer, 1, mine->block_size, mine->f);
 	if (bytes_read < 0) {
-		archive_set_error(a, errno, "Error reading file");
+		tk_archive_set_error(a, errno, "Error reading file");
 	}
 	return (bytes_read);
 }

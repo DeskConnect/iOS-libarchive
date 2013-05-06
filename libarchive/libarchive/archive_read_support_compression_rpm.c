@@ -64,13 +64,13 @@ static ssize_t	rpm_filter_read(struct archive_read_filter *,
 static int	rpm_filter_close(struct archive_read_filter *);
 
 int
-archive_read_support_compression_rpm(struct archive *_a)
+tk_archive_read_support_compression_rpm(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct archive_read_filter_bidder *bidder;
 
 	bidder = __archive_read_get_bidder(a);
-	archive_clear_error(_a);
+	tk_archive_clear_error(_a);
 	if (bidder == NULL)
 		return (ARCHIVE_FATAL);
 
@@ -144,7 +144,7 @@ rpm_bidder_init(struct archive_read_filter *self)
 
 	rpm = (struct rpm *)calloc(sizeof(*rpm), 1);
 	if (rpm == NULL) {
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Can't allocate data for rpm");
 		return (ARCHIVE_FATAL);
 	}
@@ -211,7 +211,7 @@ rpm_filter_read(struct archive_read_filter *self, const void **buff)
 				    rpm->header[2] != 0xe8 ||
 				    rpm->header[3] != 0x01) {
 					if (rpm->first_header) {
-						archive_set_error(
+						tk_archive_set_error(
 						    &self->archive->archive,
 						    ARCHIVE_ERRNO_FILE_FORMAT,
 						    "Unrecoginized rpm header");
@@ -223,8 +223,8 @@ rpm_filter_read(struct archive_read_filter *self, const void **buff)
 					break;
 				}
 				/* Calculate 'Header' length. */
-				section = archive_be32dec(rpm->header+8);
-				bytes = archive_be32dec(rpm->header+12);
+				section = tk_archive_be32dec(rpm->header+8);
+				bytes = tk_archive_be32dec(rpm->header+12);
 				rpm->hlen = 16 + section * 16 + bytes;
 				rpm->state = ST_HEADER_DATA;
 				rpm->first_header = 0;

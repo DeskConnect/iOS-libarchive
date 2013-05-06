@@ -54,7 +54,7 @@
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 
 static inline uint16_t
-archive_be16dec(const void *pp)
+tk_archive_be16dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
@@ -62,7 +62,7 @@ archive_be16dec(const void *pp)
 }
 
 static inline uint32_t
-archive_be32dec(const void *pp)
+tk_archive_be32dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
@@ -70,15 +70,15 @@ archive_be32dec(const void *pp)
 }
 
 static inline uint64_t
-archive_be64dec(const void *pp)
+tk_archive_be64dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return (((uint64_t)archive_be32dec(p) << 32) | archive_be32dec(p + 4));
+	return (((uint64_t)tk_archive_be32dec(p) << 32) | tk_archive_be32dec(p + 4));
 }
 
 static inline uint16_t
-archive_le16dec(const void *pp)
+tk_archive_le16dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
@@ -86,7 +86,7 @@ archive_le16dec(const void *pp)
 }
 
 static inline uint32_t
-archive_le32dec(const void *pp)
+tk_archive_le32dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
@@ -94,15 +94,15 @@ archive_le32dec(const void *pp)
 }
 
 static inline uint64_t
-archive_le64dec(const void *pp)
+tk_archive_le64dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return (((uint64_t)archive_le32dec(p + 4) << 32) | archive_le32dec(p));
+	return (((uint64_t)tk_archive_le32dec(p + 4) << 32) | tk_archive_le32dec(p));
 }
 
 static inline void
-archive_be16enc(void *pp, uint16_t u)
+tk_archive_be16enc(void *pp, uint16_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -111,7 +111,7 @@ archive_be16enc(void *pp, uint16_t u)
 }
 
 static inline void
-archive_be32enc(void *pp, uint32_t u)
+tk_archive_be32enc(void *pp, uint32_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -122,16 +122,16 @@ archive_be32enc(void *pp, uint32_t u)
 }
 
 static inline void
-archive_be64enc(void *pp, uint64_t u)
+tk_archive_be64enc(void *pp, uint64_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
-	archive_be32enc(p, u >> 32);
-	archive_be32enc(p + 4, u & 0xffffffff);
+	tk_archive_be32enc(p, u >> 32);
+	tk_archive_be32enc(p + 4, u & 0xffffffff);
 }
 
 static inline void
-archive_le16enc(void *pp, uint16_t u)
+tk_archive_le16enc(void *pp, uint16_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -140,7 +140,7 @@ archive_le16enc(void *pp, uint16_t u)
 }
 
 static inline void
-archive_le32enc(void *pp, uint32_t u)
+tk_archive_le32enc(void *pp, uint32_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -151,12 +151,12 @@ archive_le32enc(void *pp, uint32_t u)
 }
 
 static inline void
-archive_le64enc(void *pp, uint64_t u)
+tk_archive_le64enc(void *pp, uint64_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
-	archive_le32enc(p, u & 0xffffffff);
-	archive_le32enc(p + 4, u >> 32);
+	tk_archive_le32enc(p, u & 0xffffffff);
+	tk_archive_le32enc(p + 4, u >> 32);
 }
 
 #endif

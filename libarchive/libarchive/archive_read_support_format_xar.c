@@ -71,11 +71,11 @@ __FBSDID("$FreeBSD$");
  *   o liblzma (option)
  */
 int
-archive_read_support_format_xar(struct archive *_a)
+tk_archive_read_support_format_xar(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 
-	archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 	    "Xar not supported on this platform");
 	return (ARCHIVE_WARN);
 }
@@ -425,7 +425,7 @@ static int	expat_read_toc(struct archive_read *);
 #endif
 
 int
-archive_read_support_format_xar(struct archive *_a)
+tk_archive_read_support_format_xar(struct archive *_a)
 {
 	struct xar *xar;
 	struct archive_read *a = (struct archive_read *)_a;
@@ -433,7 +433,7 @@ archive_read_support_format_xar(struct archive *_a)
 
 	xar = (struct xar *)calloc(1, sizeof(*xar));
 	if (xar == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate xar data");
 		return (ARCHIVE_FATAL);
 	}
@@ -466,25 +466,25 @@ xar_bid(struct archive_read *a)
 	/*
 	 * Verify magic code
 	 */
-	if (archive_be32dec(b) != HEADER_MAGIC)
+	if (tk_archive_be32dec(b) != HEADER_MAGIC)
 		return (0);
 	bid += 32;
 	/*
 	 * Verify header size
 	 */
-	if (archive_be16dec(b+4) != HEADER_SIZE)
+	if (tk_archive_be16dec(b+4) != HEADER_SIZE)
 		return (0);
 	bid += 16;
 	/*
 	 * Verify header version
 	 */
-	if (archive_be16dec(b+6) != HEADER_VERSION)
+	if (tk_archive_be16dec(b+6) != HEADER_VERSION)
 		return (0);
 	bid += 16;
 	/*
 	 * Verify type of checksum
 	 */
-	switch (archive_be32dec(b+24)) {
+	switch (tk_archive_be32dec(b+24)) {
 	case CKSUM_NONE:
 	case CKSUM_SHA1:
 	case CKSUM_MD5:
@@ -518,29 +518,29 @@ read_toc(struct archive_read *a)
 	if (bytes < 0)
 		return ((int)bytes);
 	if (bytes < HEADER_SIZE) {
-		archive_set_error(&a->archive,
+		tk_archive_set_error(&a->archive,
 		    ARCHIVE_ERRNO_FILE_FORMAT,
 		    "Truncated archive header");
 		return (ARCHIVE_FATAL);
 	}
 
-	if (archive_be32dec(b) != HEADER_MAGIC) {
-		archive_set_error(&a->archive,
+	if (tk_archive_be32dec(b) != HEADER_MAGIC) {
+		tk_archive_set_error(&a->archive,
 		    ARCHIVE_ERRNO_FILE_FORMAT,
 		    "Invalid header magic");
 		return (ARCHIVE_FATAL);
 	}
-	if (archive_be16dec(b+6) != HEADER_VERSION) {
-		archive_set_error(&a->archive,
+	if (tk_archive_be16dec(b+6) != HEADER_VERSION) {
+		tk_archive_set_error(&a->archive,
 		    ARCHIVE_ERRNO_FILE_FORMAT,
 		    "Unsupported header version(%d)",
-		    archive_be16dec(b+6));
+		    tk_archive_be16dec(b+6));
 		return (ARCHIVE_FATAL);
 	}
-	toc_compressed_size = archive_be64dec(b+8);
+	toc_compressed_size = tk_archive_be64dec(b+8);
 	xar->toc_remaining = toc_compressed_size;
-	toc_uncompressed_size = archive_be64dec(b+16);
-	toc_chksum_alg = archive_be32dec(b+24);
+	toc_uncompressed_size = tk_archive_be64dec(b+16);
+	toc_chksum_alg = tk_archive_be32dec(b+24);
 	__archive_read_consume(a, HEADER_SIZE);
 	xar->offset += HEADER_SIZE;
 	xar->toc_total = 0;
@@ -567,7 +567,7 @@ read_toc(struct archive_read *a)
 	/* Set 'The HEAP' base. */
 	xar->h_base = xar->offset;
 	if (xar->toc_total != toc_uncompressed_size) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "TOC uncompressed size error");
 		return (ARCHIVE_FATAL);
 	}
@@ -583,7 +583,7 @@ read_toc(struct archive_read *a)
 		if (bytes < 0)
 			return ((int)bytes);
 		if ((uint64_t)bytes < xar->toc_chksum_size) {
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_FILE_FORMAT,
 			    "Truncated archive file");
 			return (ARCHIVE_FATAL);
@@ -612,7 +612,7 @@ read_toc(struct archive_read *a)
 				for (f2 = (*hdlink)->files; f2 != NULL;
 				    f2 = f2->hdnext) {
 					f2->nlink = nlink;
-					archive_string_copy(
+					tk_archive_string_copy(
 					    &(f2->hardlink), &(file->pathname));
 				}
 				/* Remove resolved files from hdlist_list. */
@@ -662,37 +662,37 @@ xar_read_header(struct archive_read *a, struct archive_entry *entry)
 		 */
 		file_free(file);
 	}
-	archive_entry_set_atime(entry, file->atime, 0);
-	archive_entry_set_ctime(entry, file->ctime, 0);
-	archive_entry_set_mtime(entry, file->mtime, 0);
-	archive_entry_set_gid(entry, file->gid);
+	tk_archive_entry_set_atime(entry, file->atime, 0);
+	tk_archive_entry_set_ctime(entry, file->ctime, 0);
+	tk_archive_entry_set_mtime(entry, file->mtime, 0);
+	tk_archive_entry_set_gid(entry, file->gid);
 	if (file->gname.length > 0)
-		archive_entry_update_gname_utf8(entry, file->gname.s);
-	archive_entry_set_uid(entry, file->uid);
+		tk_archive_entry_update_gname_utf8(entry, file->gname.s);
+	tk_archive_entry_set_uid(entry, file->uid);
 	if (file->uname.length > 0)
-		archive_entry_update_uname_utf8(entry, file->uname.s);
-	archive_entry_set_mode(entry, file->mode);
-	archive_entry_update_pathname_utf8(entry, file->pathname.s);
+		tk_archive_entry_update_uname_utf8(entry, file->uname.s);
+	tk_archive_entry_set_mode(entry, file->mode);
+	tk_archive_entry_update_pathname_utf8(entry, file->pathname.s);
 	if (file->symlink.length > 0)
-		archive_entry_update_symlink_utf8(entry, file->symlink.s);
+		tk_archive_entry_update_symlink_utf8(entry, file->symlink.s);
 	/* Set proper nlink. */
 	if ((file->mode & AE_IFMT) == AE_IFDIR)
-		archive_entry_set_nlink(entry, file->subdirs + 2);
+		tk_archive_entry_set_nlink(entry, file->subdirs + 2);
 	else
-		archive_entry_set_nlink(entry, file->nlink);
-	archive_entry_set_size(entry, file->size);
-	if (archive_strlen(&(file->hardlink)) > 0)
-		archive_entry_update_hardlink_utf8(entry,
+		tk_archive_entry_set_nlink(entry, file->nlink);
+	tk_archive_entry_set_size(entry, file->size);
+	if (tk_archive_strlen(&(file->hardlink)) > 0)
+		tk_archive_entry_update_hardlink_utf8(entry,
 			file->hardlink.s);
-	archive_entry_set_ino64(entry, file->ino64);
+	tk_archive_entry_set_ino64(entry, file->ino64);
 	if (file->has & HAS_DEV)
-		archive_entry_set_dev(entry, file->dev);
+		tk_archive_entry_set_dev(entry, file->dev);
 	if (file->has & HAS_DEVMAJOR)
-		archive_entry_set_devmajor(entry, file->devmajor);
+		tk_archive_entry_set_devmajor(entry, file->devmajor);
 	if (file->has & HAS_DEVMINOR)
-		archive_entry_set_devminor(entry, file->devminor);
-	if (archive_strlen(&(file->fflags_text)) > 0)
-		archive_entry_copy_fflags_text(entry, file->fflags_text.s);
+		tk_archive_entry_set_devminor(entry, file->devminor);
+	if (tk_archive_strlen(&(file->fflags_text)) > 0)
+		tk_archive_entry_copy_fflags_text(entry, file->fflags_text.s);
 
 	xar->entry_init = 1;
 	xar->entry_total = 0;
@@ -722,7 +722,7 @@ xar_read_header(struct archive_read *a, struct archive_entry *entry)
 		if (r != ARCHIVE_OK)
 			break;
 		if (outbytes != xattr->size) {
-			archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
 			    "Decompressed size error");
 			r = ARCHIVE_FATAL;
 			break;
@@ -732,7 +732,7 @@ xar_read_header(struct archive_read *a, struct archive_entry *entry)
 		    xattr->e_sum.val, xattr->e_sum.len);
 		if (r != ARCHIVE_OK)
 			break;
-		archive_entry_xattr_add_entry(entry,
+		tk_archive_entry_xattr_add_entry(entry,
 		    xattr->name.s, d, outbytes);
 		xattr = xattr->next;
 	}
@@ -790,7 +790,7 @@ xar_read_data(struct archive_read *a,
 
 	if (xar->entry_remaining == 0) {
 		if (xar->entry_total != xar->entry_size) {
-			archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
 			    "Decompressed size error");
 			r = ARCHIVE_FATAL;
 			goto abort_read_data;
@@ -850,7 +850,7 @@ xar_cleanup(struct archive_read *a)
 
 		tag = xar->unknowntags;
 		xar->unknowntags = tag->next;
-		archive_string_free(&(tag->name));
+		tk_archive_string_free(&(tag->name));
 		free(tag);
 	}
 	free(xar);
@@ -875,7 +875,7 @@ move_reading_point(struct archive_read *a, uint64_t offset)
 				return ((int)step);
 			xar->offset += step;
 		} else {
-			archive_set_error(&(a->archive),
+			tk_archive_set_error(&(a->archive),
 			    ARCHIVE_ERRNO_MISC,
 			    "Cannot seek.");
 			return (ARCHIVE_FAILED);
@@ -910,7 +910,7 @@ rd_contents(struct archive_read *a, const void **buff, size_t *size,
 	if (bytes < 0)
 		return ((int)bytes);
 	if (bytes == 0) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Truncated archive file");
 		return (ARCHIVE_FATAL);
 	}
@@ -1211,10 +1211,10 @@ _checksum_init(struct chksumwork *sumwrk, int sum_alg)
 	case CKSUM_NONE:
 		break;
 	case CKSUM_SHA1:
-		archive_sha1_init(&(sumwrk->sha1ctx));
+		tk_archive_sha1_init(&(sumwrk->sha1ctx));
 		break;
 	case CKSUM_MD5:
-		archive_md5_init(&(sumwrk->md5ctx));
+		tk_archive_md5_init(&(sumwrk->md5ctx));
 		break;
 	}
 }
@@ -1227,10 +1227,10 @@ _checksum_update(struct chksumwork *sumwrk, const void *buff, size_t size)
 	case CKSUM_NONE:
 		break;
 	case CKSUM_SHA1:
-		archive_sha1_update(&(sumwrk->sha1ctx), buff, size);
+		tk_archive_sha1_update(&(sumwrk->sha1ctx), buff, size);
 		break;
 	case CKSUM_MD5:
-		archive_md5_update(&(sumwrk->md5ctx), buff, size);
+		tk_archive_md5_update(&(sumwrk->md5ctx), buff, size);
 		break;
 	}
 }
@@ -1245,13 +1245,13 @@ _checksum_final(struct chksumwork *sumwrk, const void *val, size_t len)
 	case CKSUM_NONE:
 		break;
 	case CKSUM_SHA1:
-		archive_sha1_final(&(sumwrk->sha1ctx), sum);
+		tk_archive_sha1_final(&(sumwrk->sha1ctx), sum);
 		if (len != SHA1_SIZE ||
 		    memcmp(val, sum, SHA1_SIZE) != 0)
 			r = ARCHIVE_FAILED;
 		break;
 	case CKSUM_MD5:
-		archive_md5_final(&(sumwrk->md5ctx), sum);
+		tk_archive_md5_final(&(sumwrk->md5ctx), sum);
 		if (len != MD5_SIZE ||
 		    memcmp(val, sum, MD5_SIZE) != 0)
 			r = ARCHIVE_FAILED;
@@ -1293,7 +1293,7 @@ checksum_final(struct archive_read *a, const void *a_sum_val,
 	if (r == ARCHIVE_OK)
 		r = _checksum_final(&(xar->e_sumwrk), e_sum_val, e_sum_len);
 	if (r != ARCHIVE_OK)
-		archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&(a->archive), ARCHIVE_ERRNO_MISC,
 		    "Sumcheck error");
 	return (r);
 }
@@ -1316,7 +1316,7 @@ decompression_init(struct archive_read *a, enum enctype encoding)
 		else
 			r = inflateInit(&(xar->stream));
 		if (r != Z_OK) {
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "Couldn't initialize zlib stream.");
 			return (ARCHIVE_FATAL);
 		}
@@ -1348,7 +1348,7 @@ decompression_init(struct archive_read *a, enum enctype encoding)
 				detail = "mis-compiled library";
 				break;
 			}
-			archive_set_error(&a->archive, err,
+			tk_archive_set_error(&a->archive, err,
 			    "Internal error initializing decompressor: %s",
 			    detail == NULL ? "??" : detail);
 			xar->bzstream_valid = 0;
@@ -1378,21 +1378,21 @@ decompression_init(struct archive_read *a, enum enctype encoding)
 		if (r != LZMA_OK) {
 			switch (r) {
 			case LZMA_MEM_ERROR:
-				archive_set_error(&a->archive,
+				tk_archive_set_error(&a->archive,
 				    ENOMEM,
 				    "Internal error initializing "
 				    "compression library: "
 				    "Cannot allocate memory");
 				break;
 			case LZMA_OPTIONS_ERROR:
-				archive_set_error(&a->archive,
+				tk_archive_set_error(&a->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Internal error initializing "
 				    "compression library: "
 				    "Invalid or unsupported options");
 				break;
 			default:
-				archive_set_error(&a->archive,
+				tk_archive_set_error(&a->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Internal error initializing "
 				    "lzma library");
@@ -1412,14 +1412,14 @@ decompression_init(struct archive_read *a, enum enctype encoding)
 		if (r != LZMADEC_OK) {
 			switch (r) {
 			case LZMADEC_HEADER_ERROR:
-				archive_set_error(&a->archive,
+				tk_archive_set_error(&a->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Internal error initializing "
 				    "compression library: "
 				    "invalid header");
 				break;
 			case LZMADEC_MEM_ERROR:
-				archive_set_error(&a->archive,
+				tk_archive_set_error(&a->archive,
 				    ENOMEM,
 				    "Internal error initializing "
 				    "compression library: "
@@ -1452,7 +1452,7 @@ decompression_init(struct archive_read *a, enum enctype encoding)
 		case XZ: detail = "xz"; break;
 		default: detail = "??"; break;
 		}
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "%s compression not supported on this platform",
 		    detail);
 		return (ARCHIVE_FAILED);
@@ -1490,7 +1490,7 @@ decompress(struct archive_read *a, const void **buff, size_t *outbytes,
 		case Z_STREAM_END: /* Found end of stream. */
 			break;
 		default:
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "File decompression failed (%d)", r);
 			return (ARCHIVE_FATAL);
 		}
@@ -1510,7 +1510,7 @@ decompress(struct archive_read *a, const void **buff, size_t *outbytes,
 			case BZ_OK:
 				break;
 			default:
-				archive_set_error(&(a->archive),
+				tk_archive_set_error(&(a->archive),
 				    ARCHIVE_ERRNO_MISC,
 				    "Failed to clean up decompressor");
 				return (ARCHIVE_FATAL);
@@ -1520,7 +1520,7 @@ decompress(struct archive_read *a, const void **buff, size_t *outbytes,
 		case BZ_OK: /* Decompressor made some progress. */
 			break;
 		default:
-			archive_set_error(&(a->archive),
+			tk_archive_set_error(&(a->archive),
 			    ARCHIVE_ERRNO_MISC,
 			    "bzip decompression failed");
 			return (ARCHIVE_FATAL);
@@ -1545,7 +1545,7 @@ decompress(struct archive_read *a, const void **buff, size_t *outbytes,
 		case LZMA_OK: /* Decompressor made some progress. */
 			break;
 		default:
-			archive_set_error(&(a->archive),
+			tk_archive_set_error(&(a->archive),
 			    ARCHIVE_ERRNO_MISC,
 			    "%s decompression failed(%d)",
 			    (xar->entry_encoding == XZ)?"xz":"lzma",
@@ -1568,7 +1568,7 @@ decompress(struct archive_read *a, const void **buff, size_t *outbytes,
 			case LZMADEC_OK:
 				break;
 			default:
-				archive_set_error(&(a->archive),
+				tk_archive_set_error(&(a->archive),
 				    ARCHIVE_ERRNO_MISC,
 				    "Failed to clean up lzmadec decompressor");
 				return (ARCHIVE_FATAL);
@@ -1578,7 +1578,7 @@ decompress(struct archive_read *a, const void **buff, size_t *outbytes,
 		case LZMADEC_OK: /* Decompressor made some progress. */
 			break;
 		default:
-			archive_set_error(&(a->archive),
+			tk_archive_set_error(&(a->archive),
 			    ARCHIVE_ERRNO_MISC,
 			    "lzmadec decompression failed(%d)",
 			    r);
@@ -1625,7 +1625,7 @@ decompression_cleanup(struct archive_read *a)
 	r = ARCHIVE_OK;
 	if (xar->stream_valid) {
 		if (inflateEnd(&(xar->stream)) != Z_OK) {
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_MISC,
 			    "Failed to clean up zlib decompressor");
 			r = ARCHIVE_FATAL;
@@ -1634,7 +1634,7 @@ decompression_cleanup(struct archive_read *a)
 #if defined(HAVE_BZLIB_H) && defined(BZ_CONFIG_ERROR)
 	if (xar->bzstream_valid) {
 		if (BZ2_bzDecompressEnd(&(xar->bzstream)) != BZ_OK) {
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_MISC,
 			    "Failed to clean up bzip2 decompressor");
 			r = ARCHIVE_FATAL;
@@ -1647,7 +1647,7 @@ decompression_cleanup(struct archive_read *a)
 #elif defined(HAVE_LZMA_H) && defined(HAVE_LIBLZMA)
 	if (xar->lzstream_valid) {
 		if (lzmadec_end(&(xar->lzstream)) != LZMADEC_OK) {
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_MISC,
 			    "Failed to clean up lzmadec decompressor");
 			r = ARCHIVE_FATAL;
@@ -1702,11 +1702,11 @@ file_free(struct xar_file *file)
 {
 	struct xattr *xattr;
 
-	archive_string_free(&(file->pathname));
-	archive_string_free(&(file->symlink));
-	archive_string_free(&(file->uname));
-	archive_string_free(&(file->gname));
-	archive_string_free(&(file->hardlink));
+	tk_archive_string_free(&(file->pathname));
+	tk_archive_string_free(&(file->symlink));
+	tk_archive_string_free(&(file->uname));
+	tk_archive_string_free(&(file->gname));
+	tk_archive_string_free(&(file->hardlink));
 	xattr = file->xattr_list;
 	while (xattr != NULL) {
 		struct xattr *next;
@@ -1746,7 +1746,7 @@ xattr_new(struct xar *xar, struct xmlattr_list *list)
 static void
 xattr_free(struct xattr *xattr)
 {
-	archive_string_free(&(xattr->name));
+	tk_archive_string_free(&(xattr->name));
 	free(xattr);
 }
 
@@ -1808,8 +1808,8 @@ unknowntag_start(struct xar *xar, const char *name)
 	if (tag == NULL)
 		__archive_errx(1, "Out of memory");
 	tag->next = xar->unknowntags;
-	archive_string_init(&(tag->name));
-	archive_strcpy(&(tag->name), name);
+	tk_archive_string_init(&(tag->name));
+	tk_archive_strcpy(&(tag->name), name);
 	if (xar->unknowntags == NULL) {
 		xar->xmlsts_unknown = xar->xmlsts;
 		xar->xmlsts = UNKNOWN;
@@ -1830,7 +1830,7 @@ unknowntag_end(struct xar *xar, const char *name)
 		return;
 	if (strcmp(tag->name.s, name) == 0) {
 		xar->unknowntags = tag->next;
-		archive_string_free(&(tag->name));
+		tk_archive_string_free(&(tag->name));
 		free(tag);
 		if (xar->unknowntags == NULL)
 			xar->xmlsts = xar->xmlsts_unknown;
@@ -2509,13 +2509,13 @@ strappend_base64(struct archive_string *as, const char *s, size_t l)
 			--l;
 		}
 		if (len+3 >= sizeof(buff)) {
-			archive_strncat(as, (const char *)buff, len);
+			tk_archive_strncat(as, (const char *)buff, len);
 			len = 0;
 			out = buff;
 		}
 	}
 	if (len > 0)
-		archive_strncat(as, (const char *)buff, len);
+		tk_archive_strncat(as, (const char *)buff, len);
 }
 
 static void
@@ -2553,19 +2553,19 @@ xml_data(void *userData, const char *s, int len)
 	switch (xar->xmlsts) {
 	case FILE_NAME:
 		if (xar->file->parent != NULL) {
-			archive_string_concat(&(xar->file->pathname),
+			tk_archive_string_concat(&(xar->file->pathname),
 			    &(xar->file->parent->pathname));
-			archive_strappend_char(&(xar->file->pathname), '/');
+			tk_archive_strappend_char(&(xar->file->pathname), '/');
 		}
 		xar->file->has |= HAS_PATHNAME;
 		if (xar->base64text)
 			strappend_base64(&(xar->file->pathname), s, len);
 		else
-			archive_strncat(&(xar->file->pathname), s, len);
+			tk_archive_strncat(&(xar->file->pathname), s, len);
 		break;
 	case FILE_LINK:
 		xar->file->has |= HAS_SYMLINK;
-		archive_strncpy(&(xar->file->symlink), s, len);
+		tk_archive_strncpy(&(xar->file->symlink), s, len);
 		break;
 	case FILE_TYPE:
 		if (strncmp("file", s, len) == 0 ||
@@ -2616,7 +2616,7 @@ xml_data(void *userData, const char *s, int len)
 		break;
 	case FILE_GROUP:
 		xar->file->has |= HAS_GID;
-		archive_strncpy(&(xar->file->gname), s, len);
+		tk_archive_strncpy(&(xar->file->gname), s, len);
 		break;
 	case FILE_GID:
 		xar->file->has |= HAS_GID;
@@ -2624,7 +2624,7 @@ xml_data(void *userData, const char *s, int len)
 		break;
 	case FILE_USER:
 		xar->file->has |= HAS_UID;
-		archive_strncpy(&(xar->file->uname), s, len);
+		tk_archive_strncpy(&(xar->file->uname), s, len);
 		break;
 	case FILE_UID:
 		xar->file->has |= HAS_UID;
@@ -2686,11 +2686,11 @@ xml_data(void *userData, const char *s, int len)
 		break;
 	case FILE_EA_NAME:
 		xar->file->has |= HAS_XATTR;
-		archive_strncpy(&(xar->xattr->name), s, len);
+		tk_archive_strncpy(&(xar->xattr->name), s, len);
 		break;
 	case FILE_EA_FSTYPE:
 		xar->file->has |= HAS_XATTR;
-		archive_strncpy(&(xar->xattr->fstype), s, len);
+		tk_archive_strncpy(&(xar->xattr->fstype), s, len);
 		break;
 		break;
 	case FILE_ACL_DEFAULT:
@@ -2803,9 +2803,9 @@ xml_parse_file_flags(struct xar *xar, const char *name)
 	if (flag == NULL)
 		return (0);
 	xar->file->has |= HAS_FFLAGS;
-	if (archive_strlen(&(xar->file->fflags_text)) > 0)
-		archive_strappend_char(&(xar->file->fflags_text), ',');
-	archive_strcat(&(xar->file->fflags_text), flag);
+	if (tk_archive_strlen(&(xar->file->fflags_text)) > 0)
+		tk_archive_strappend_char(&(xar->file->fflags_text), ',');
+	tk_archive_strcat(&(xar->file->fflags_text), flag);
 	return (1);
 }
 
@@ -2900,9 +2900,9 @@ xml_parse_file_ext2(struct xar *xar, const char *name)
 
 	if (flag == NULL)
 		return (0);
-	if (archive_strlen(&(xar->file->fflags_text)) > 0)
-		archive_strappend_char(&(xar->file->fflags_text), ',');
-	archive_strcat(&(xar->file->fflags_text), flag);
+	if (tk_archive_strlen(&(xar->file->fflags_text)) > 0)
+		tk_archive_strappend_char(&(xar->file->fflags_text), ',');
+	tk_archive_strcat(&(xar->file->fflags_text), flag);
 	return (1);
 }
 
@@ -2985,12 +2985,12 @@ xml2_error_hdr(void *arg, const char *msg, xmlParserSeverities severity,
 	switch (severity) {
 	case XML_PARSER_SEVERITY_VALIDITY_WARNING:
 	case XML_PARSER_SEVERITY_WARNING:
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "XML Parsing error: %s", msg);
 		break;
 	case XML_PARSER_SEVERITY_VALIDITY_ERROR:
 	case XML_PARSER_SEVERITY_ERROR:
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "XML Parsing error: %s", msg);
 		break;
 	}
@@ -3005,7 +3005,7 @@ xml2_read_toc(struct archive_read *a)
 
 	reader = xmlReaderForIO(xml2_read_cb, xml2_close_cb, a, NULL, NULL, 0);
 	if (reader == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Couldn't allocate memory for xml parser");
 		return (ARCHIVE_FATAL);
 	}
@@ -3109,7 +3109,7 @@ expat_read_toc(struct archive_read *a)
 	/* Initialize XML Parser library. */
 	parser = XML_ParserCreate(NULL);
 	if (parser == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Couldn't allocate memory for xml parser");
 		return (ARCHIVE_FATAL);
 	}
@@ -3138,7 +3138,7 @@ expat_read_toc(struct archive_read *a)
 		xr = XML_Parse(parser, d, outbytes, xar->toc_remaining == 0);
 		if (xr == XML_STATUS_ERROR) {
 			XML_ParserFree(parser);
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "XML Parsing failed");
 			return (ARCHIVE_FATAL);
 		}

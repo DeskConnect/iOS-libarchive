@@ -108,21 +108,21 @@ struct private_data {
 	size_t		 compressed_offset;
 };
 
-static int	archive_compressor_compress_finish(struct archive_write *);
-static int	archive_compressor_compress_init(struct archive_write *);
-static int	archive_compressor_compress_write(struct archive_write *,
+static int	tk_archive_compressor_compress_finish(struct archive_write *);
+static int	tk_archive_compressor_compress_init(struct archive_write *);
+static int	tk_archive_compressor_compress_write(struct archive_write *,
 		    const void *, size_t);
 
 /*
  * Allocate, initialize and return a archive object.
  */
 int
-archive_write_set_compression_compress(struct archive *_a)
+tk_archive_write_set_compression_compress(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_MAGIC,
 	    ARCHIVE_STATE_NEW, "archive_write_set_compression_compress");
-	a->compressor.init = &archive_compressor_compress_init;
+	a->compressor.init = &tk_archive_compressor_compress_init;
 	a->archive.compression_code = ARCHIVE_COMPRESSION_COMPRESS;
 	a->archive.compression_name = "compress";
 	return (ARCHIVE_OK);
@@ -132,7 +132,7 @@ archive_write_set_compression_compress(struct archive *_a)
  * Setup callback.
  */
 static int
-archive_compressor_compress_init(struct archive_write *a)
+tk_archive_compressor_compress_init(struct archive_write *a)
 {
 	int ret;
 	struct private_data *state;
@@ -141,7 +141,7 @@ archive_compressor_compress_init(struct archive_write *a)
 	a->archive.compression_name = "compress";
 
 	if (a->bytes_per_block < 4) {
-		archive_set_error(&a->archive, EINVAL,
+		tk_archive_set_error(&a->archive, EINVAL,
 		    "Can't write Compress header as single block");
 		return (ARCHIVE_FATAL);
 	}
@@ -154,7 +154,7 @@ archive_compressor_compress_init(struct archive_write *a)
 
 	state = (struct private_data *)malloc(sizeof(*state));
 	if (state == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression");
 		return (ARCHIVE_FATAL);
 	}
@@ -164,14 +164,14 @@ archive_compressor_compress_init(struct archive_write *a)
 	state->compressed = malloc(state->compressed_buffer_size);
 
 	if (state->compressed == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression buffer");
 		free(state);
 		return (ARCHIVE_FATAL);
 	}
 
-	a->compressor.write = archive_compressor_compress_write;
-	a->compressor.finish = archive_compressor_compress_finish;
+	a->compressor.write = tk_archive_compressor_compress_write;
+	a->compressor.finish = tk_archive_compressor_compress_finish;
 
 	state->max_maxcode = 0x10000;	/* Should NEVER generate this code. */
 	state->in_count = 0;		/* Length of input. */
@@ -323,7 +323,7 @@ output_flush(struct archive_write *a)
  * Write data to the compressed stream.
  */
 static int
-archive_compressor_compress_write(struct archive_write *a, const void *buff,
+tk_archive_compressor_compress_write(struct archive_write *a, const void *buff,
     size_t length)
 {
 	struct private_data *state;
@@ -334,7 +334,7 @@ archive_compressor_compress_write(struct archive_write *a, const void *buff,
 
 	state = (struct private_data *)a->compressor.data;
 	if (a->client_writer == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "No write callback is registered?  "
 		    "This is probably an internal programming error.");
 		return (ARCHIVE_FATAL);
@@ -420,7 +420,7 @@ archive_compressor_compress_write(struct archive_write *a, const void *buff,
  * Finish the compression...
  */
 static int
-archive_compressor_compress_finish(struct archive_write *a)
+tk_archive_compressor_compress_finish(struct archive_write *a)
 {
 	ssize_t block_length, target_block_length, bytes_written;
 	int ret;
@@ -429,7 +429,7 @@ archive_compressor_compress_finish(struct archive_write *a)
 
 	state = (struct private_data *)a->compressor.data;
 	if (a->client_writer == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "No write callback is registered?  "
 		    "This is probably an internal programming error.");
 		ret = ARCHIVE_FATAL;
@@ -443,7 +443,7 @@ archive_compressor_compress_finish(struct archive_write *a)
 			    (state->in_count % a->bytes_per_block);
 			if (tocopy > a->null_length)
 				tocopy = a->null_length;
-			ret = archive_compressor_compress_write(a, a->nulls,
+			ret = tk_archive_compressor_compress_write(a, a->nulls,
 			    tocopy);
 			if (ret != ARCHIVE_OK)
 				goto cleanup;

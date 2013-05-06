@@ -47,9 +47,9 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_compression_bzip2.c 20
 
 #if !defined(HAVE_BZLIB_H) || !defined(BZ_CONFIG_ERROR)
 int
-archive_write_set_compression_bzip2(struct archive *a)
+tk_archive_write_set_compression_bzip2(struct archive *a)
 {
-	archive_set_error(a, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(a, ARCHIVE_ERRNO_MISC,
 	    "bzip2 compression not supported on this platform");
 	return (ARCHIVE_FATAL);
 }
@@ -74,11 +74,11 @@ struct private_config {
 #define	SET_NEXT_IN(st,src)					\
 	(st)->stream.next_in = (char *)(uintptr_t)(const void *)(src)
 
-static int	archive_compressor_bzip2_finish(struct archive_write *);
-static int	archive_compressor_bzip2_init(struct archive_write *);
-static int	archive_compressor_bzip2_options(struct archive_write *,
+static int	tk_archive_compressor_bzip2_finish(struct archive_write *);
+static int	tk_archive_compressor_bzip2_init(struct archive_write *);
+static int	tk_archive_compressor_bzip2_options(struct archive_write *,
 		    const char *, const char *);
-static int	archive_compressor_bzip2_write(struct archive_write *,
+static int	tk_archive_compressor_bzip2_write(struct archive_write *,
 		    const void *, size_t);
 static int	drive_compressor(struct archive_write *, struct private_data *,
 		    int finishing);
@@ -87,7 +87,7 @@ static int	drive_compressor(struct archive_write *, struct private_data *,
  * Allocate, initialize and return an archive object.
  */
 int
-archive_write_set_compression_bzip2(struct archive *_a)
+tk_archive_write_set_compression_bzip2(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	struct private_config *config;
@@ -95,14 +95,14 @@ archive_write_set_compression_bzip2(struct archive *_a)
 	    ARCHIVE_STATE_NEW, "archive_write_set_compression_bzip2");
 	config = malloc(sizeof(*config));
 	if (config == NULL) {
-		archive_set_error(&a->archive, ENOMEM, "Out of memory");
+		tk_archive_set_error(&a->archive, ENOMEM, "Out of memory");
 		return (ARCHIVE_FATAL);
 	}
 	a->compressor.config = config;
-	a->compressor.finish = archive_compressor_bzip2_finish;
+	a->compressor.finish = tk_archive_compressor_bzip2_finish;
 	config->compression_level = 9; /* default */
-	a->compressor.init = &archive_compressor_bzip2_init;
-	a->compressor.options = &archive_compressor_bzip2_options;
+	a->compressor.init = &tk_archive_compressor_bzip2_init;
+	a->compressor.options = &tk_archive_compressor_bzip2_options;
 	a->archive.compression_code = ARCHIVE_COMPRESSION_BZIP2;
 	a->archive.compression_name = "bzip2";
 	return (ARCHIVE_OK);
@@ -112,7 +112,7 @@ archive_write_set_compression_bzip2(struct archive *_a)
  * Setup callback.
  */
 static int
-archive_compressor_bzip2_init(struct archive_write *a)
+tk_archive_compressor_bzip2_init(struct archive_write *a)
 {
 	int ret;
 	struct private_data *state;
@@ -127,7 +127,7 @@ archive_compressor_bzip2_init(struct archive_write *a)
 
 	state = (struct private_data *)malloc(sizeof(*state));
 	if (state == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression");
 		return (ARCHIVE_FATAL);
 	}
@@ -137,7 +137,7 @@ archive_compressor_bzip2_init(struct archive_write *a)
 	state->compressed = (char *)malloc(state->compressed_buffer_size);
 
 	if (state->compressed == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression buffer");
 		free(state);
 		return (ARCHIVE_FATAL);
@@ -145,7 +145,7 @@ archive_compressor_bzip2_init(struct archive_write *a)
 
 	state->stream.next_out = state->compressed;
 	state->stream.avail_out = state->compressed_buffer_size;
-	a->compressor.write = archive_compressor_bzip2_write;
+	a->compressor.write = tk_archive_compressor_bzip2_write;
 
 	/* Initialize compression library */
 	ret = BZ2_bzCompressInit(&(state->stream),
@@ -156,7 +156,7 @@ archive_compressor_bzip2_init(struct archive_write *a)
 	}
 
 	/* Library setup failed: clean up. */
-	archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 	    "Internal error initializing compression library");
 	free(state->compressed);
 	free(state);
@@ -164,17 +164,17 @@ archive_compressor_bzip2_init(struct archive_write *a)
 	/* Override the error message if we know what really went wrong. */
 	switch (ret) {
 	case BZ_PARAM_ERROR:
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library: "
 		    "invalid setup parameter");
 		break;
 	case BZ_MEM_ERROR:
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Internal error initializing compression library: "
 		    "out of memory");
 		break;
 	case BZ_CONFIG_ERROR:
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library: "
 		    "mis-compiled library");
 		break;
@@ -188,7 +188,7 @@ archive_compressor_bzip2_init(struct archive_write *a)
  * Set write options.
  */
 static int
-archive_compressor_bzip2_options(struct archive_write *a, const char *key,
+tk_archive_compressor_bzip2_options(struct archive_write *a, const char *key,
     const char *value)
 {
 	struct private_config *config;
@@ -216,14 +216,14 @@ archive_compressor_bzip2_options(struct archive_write *a, const char *key,
  * Returns ARCHIVE_OK if all data written, error otherwise.
  */
 static int
-archive_compressor_bzip2_write(struct archive_write *a, const void *buff,
+tk_archive_compressor_bzip2_write(struct archive_write *a, const void *buff,
     size_t length)
 {
 	struct private_data *state;
 
 	state = (struct private_data *)a->compressor.data;
 	if (a->client_writer == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "No write callback is registered?  "
 		    "This is probably an internal programming error.");
 		return (ARCHIVE_FATAL);
@@ -246,7 +246,7 @@ archive_compressor_bzip2_write(struct archive_write *a, const void *buff,
  * Finish the compression.
  */
 static int
-archive_compressor_bzip2_finish(struct archive_write *a)
+tk_archive_compressor_bzip2_finish(struct archive_write *a)
 {
 	ssize_t block_length;
 	int ret;
@@ -259,7 +259,7 @@ archive_compressor_bzip2_finish(struct archive_write *a)
 	state = (struct private_data *)a->compressor.data;
 	if (state != NULL) {
 		if (a->client_writer == NULL) {
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_PROGRAMMER,
 			    "No write callback is registered?\n"
 			    "This is probably an internal programming error.");
@@ -325,7 +325,7 @@ cleanup:
 		case BZ_OK:
 			break;
 		default:
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 			    "Failed to clean up compressor");
 			ret = ARCHIVE_FATAL;
 		}
@@ -395,7 +395,7 @@ drive_compressor(struct archive_write *a, struct private_data *state, int finish
 			return (ARCHIVE_OK);
 		default:
 			/* Any other return value indicates an error */
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_PROGRAMMER,
 			    "Bzip2 compression failed;"
 			    " BZ2_bzCompress() returned %d",

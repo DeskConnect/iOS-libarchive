@@ -66,22 +66,22 @@ static off_t	file_skip(struct archive *, void *, off_t request);
 #endif
 
 int
-archive_read_open_fd(struct archive *a, int fd, size_t block_size)
+tk_archive_read_open_fd(struct archive *a, int fd, size_t block_size)
 {
 	struct stat st;
 	struct read_fd_data *mine;
 	void *b;
 
-	archive_clear_error(a);
+	tk_archive_clear_error(a);
 	if (fstat(fd, &st) != 0) {
-		archive_set_error(a, errno, "Can't stat fd %d", fd);
+		tk_archive_set_error(a, errno, "Can't stat fd %d", fd);
 		return (ARCHIVE_FATAL);
 	}
 
 	mine = (struct read_fd_data *)malloc(sizeof(*mine));
 	b = malloc(block_size);
 	if (mine == NULL || b == NULL) {
-		archive_set_error(a, ENOMEM, "No memory");
+		tk_archive_set_error(a, ENOMEM, "No memory");
 		free(mine);
 		free(b);
 		return (ARCHIVE_FATAL);
@@ -97,7 +97,7 @@ archive_read_open_fd(struct archive *a, int fd, size_t block_size)
 	 * only enable this optimization for regular files.
 	 */
 	if (S_ISREG(st.st_mode)) {
-		archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
+		tk_archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
 		mine->can_skip = 1;
 	} else
 		mine->can_skip = 0;
@@ -105,7 +105,7 @@ archive_read_open_fd(struct archive *a, int fd, size_t block_size)
 	setmode(mine->fd, O_BINARY);
 #endif
 
-	return (archive_read_open2(a, mine,
+	return (tk_archive_read_open2(a, mine,
 		NULL, file_read, file_skip, file_close));
 }
 
@@ -121,7 +121,7 @@ file_read(struct archive *a, void *client_data, const void **buff)
 		if (bytes_read < 0) {
 			if (errno == EINTR)
 				continue;
-			archive_set_error(a, errno, "Error reading fd %d", mine->fd);
+			tk_archive_set_error(a, errno, "Error reading fd %d", mine->fd);
 		}
 		return (bytes_read);
 	}
@@ -172,7 +172,7 @@ file_skip(struct archive *a, void *client_data, off_t request)
 		 * likely caused by a programmer error (too large request)
 		 * or a corrupted archive file.
 		 */
-		archive_set_error(a, errno, "Error seeking");
+		tk_archive_set_error(a, errno, "Error seeking");
 		return (-1);
 	}
 	return (new_offset - old_offset);

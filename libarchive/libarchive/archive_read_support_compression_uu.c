@@ -64,13 +64,13 @@ static ssize_t	uudecode_filter_read(struct archive_read_filter *,
 static int	uudecode_filter_close(struct archive_read_filter *);
 
 int
-archive_read_support_compression_uu(struct archive *_a)
+tk_archive_read_support_compression_uu(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct archive_read_filter_bidder *bidder;
 
 	bidder = __archive_read_get_bidder(a);
-	archive_clear_error(_a);
+	tk_archive_clear_error(_a);
 	if (bidder == NULL)
 		return (ARCHIVE_FATAL);
 
@@ -354,7 +354,7 @@ uudecode_bidder_init(struct archive_read_filter *self)
 	out_buff = malloc(OUT_BUFF_SIZE);
 	in_buff = malloc(IN_BUFF_SIZE);
 	if (uudecode == NULL || out_buff == NULL || in_buff == NULL) {
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Can't allocate data for uudecode");
 		free(uudecode);
 		free(out_buff);
@@ -386,7 +386,7 @@ ensure_in_buff_size(struct archive_read_filter *self,
 		if (ptr == NULL ||
 		    newsize < uudecode->in_allocated) {
 			free(ptr);
-			archive_set_error(&self->archive->archive,
+			tk_archive_set_error(&self->archive->archive,
 			    ENOMEM,
     			    "Can't allocate data for uudecode");
 			return (ARCHIVE_FATAL);
@@ -447,7 +447,7 @@ read_more:
 		len = get_line(b, avail_in - used, &nl);
 		if (len < 0) {
 			/* Non-ascii character is found. */
-			archive_set_error(&self->archive->archive,
+			tk_archive_set_error(&self->archive->archive,
 			    ARCHIVE_ERRNO_MISC,
 			    "Insufficient compressed data");
 			return (ARCHIVE_FATAL);
@@ -497,7 +497,7 @@ read_more:
 		case ST_READ_UU:
 			body = len - nl;
 			if (!uuchar[*b] || body <= 0) {
-				archive_set_error(&self->archive->archive,
+				tk_archive_set_error(&self->archive->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Insufficient compressed data");
 				return (ARCHIVE_FATAL);
@@ -506,7 +506,7 @@ read_more:
 			l = UUDECODE(*b++);
 			body--;
 			if (l > body) {
-				archive_set_error(&self->archive->archive,
+				tk_archive_set_error(&self->archive->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Insufficient compressed data");
 				return (ARCHIVE_FATAL);
@@ -542,7 +542,7 @@ read_more:
 				}
 			}
 			if (l) {
-				archive_set_error(&self->archive->archive,
+				tk_archive_set_error(&self->archive->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Insufficient compressed data");
 				return (ARCHIVE_FATAL);
@@ -552,7 +552,7 @@ read_more:
 			if (len - nl == 3 && memcmp(b, "end ", 3) == 0)
 				uudecode->state = ST_FIND_HEAD;
 			else {
-				archive_set_error(&self->archive->archive,
+				tk_archive_set_error(&self->archive->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Insufficient compressed data");
 				return (ARCHIVE_FATAL);
@@ -596,7 +596,7 @@ read_more:
 				}
 			}
 			if (l && *b != '=') {
-				archive_set_error(&self->archive->archive,
+				tk_archive_set_error(&self->archive->archive,
 				    ARCHIVE_ERRNO_MISC,
 				    "Insufficient compressed data");
 				return (ARCHIVE_FATAL);

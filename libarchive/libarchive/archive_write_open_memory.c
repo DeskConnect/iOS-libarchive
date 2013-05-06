@@ -61,20 +61,20 @@ static ssize_t	memory_write(struct archive *, void *, const void *buff, size_t);
  * client buffer and lets us tell the client the final size.
  */
 int
-archive_write_open_memory(struct archive *a, void *buff, size_t buffSize, size_t *used)
+tk_archive_write_open_memory(struct archive *a, void *buff, size_t buffSize, size_t *used)
 {
 	struct write_memory_data *mine;
 
 	mine = (struct write_memory_data *)malloc(sizeof(*mine));
 	if (mine == NULL) {
-		archive_set_error(a, ENOMEM, "No memory");
+		tk_archive_set_error(a, ENOMEM, "No memory");
 		return (ARCHIVE_FATAL);
 	}
 	memset(mine, 0, sizeof(*mine));
 	mine->buff = buff;
 	mine->size = buffSize;
 	mine->client_size = used;
-	return (archive_write_open(a, mine,
+	return (tk_archive_write_open(a, mine,
 		    memory_write_open, memory_write, memory_write_close));
 }
 
@@ -87,8 +87,8 @@ memory_write_open(struct archive *a, void *client_data)
 	if (mine->client_size != NULL)
 		*mine->client_size = mine->used;
 	/* Disable padding if it hasn't been set explicitly. */
-	if (-1 == archive_write_get_bytes_in_last_block(a))
-		archive_write_set_bytes_in_last_block(a, 1);
+	if (-1 == tk_archive_write_get_bytes_in_last_block(a))
+		tk_archive_write_set_bytes_in_last_block(a, 1);
 	return (ARCHIVE_OK);
 }
 
@@ -105,7 +105,7 @@ memory_write(struct archive *a, void *client_data, const void *buff, size_t leng
 	mine = client_data;
 
 	if (mine->used + length > mine->size) {
-		archive_set_error(a, ENOMEM, "Buffer exhausted");
+		tk_archive_set_error(a, ENOMEM, "Buffer exhausted");
 		return (ARCHIVE_FATAL);
 	}
 	memcpy(mine->buff + mine->used, buff, length);

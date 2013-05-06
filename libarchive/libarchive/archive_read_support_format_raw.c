@@ -43,16 +43,16 @@ struct raw_info {
 	int     end_of_file;
 };
 
-static int	archive_read_format_raw_bid(struct archive_read *);
-static int	archive_read_format_raw_cleanup(struct archive_read *);
-static int	archive_read_format_raw_read_data(struct archive_read *,
+static int	tk_archive_read_format_raw_bid(struct archive_read *);
+static int	tk_archive_read_format_raw_cleanup(struct archive_read *);
+static int	tk_archive_read_format_raw_read_data(struct archive_read *,
 		    const void **, size_t *, off_t *);
-static int	archive_read_format_raw_read_data_skip(struct archive_read *);
-static int	archive_read_format_raw_read_header(struct archive_read *,
+static int	tk_archive_read_format_raw_read_data_skip(struct archive_read *);
+static int	tk_archive_read_format_raw_read_header(struct archive_read *,
 		    struct archive_entry *);
 
 int
-archive_read_support_format_raw(struct archive *_a)
+tk_archive_read_support_format_raw(struct archive *_a)
 {
 	struct raw_info *info;
 	struct archive_read *a = (struct archive_read *)_a;
@@ -60,7 +60,7 @@ archive_read_support_format_raw(struct archive *_a)
 
 	info = (struct raw_info *)calloc(1, sizeof(*info));
 	if (info == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate raw_info data");
 		return (ARCHIVE_FATAL);
 	}
@@ -68,12 +68,12 @@ archive_read_support_format_raw(struct archive *_a)
 	r = __archive_read_register_format(a,
 	    info,
 	    "raw",
-	    archive_read_format_raw_bid,
+	    tk_archive_read_format_raw_bid,
 	    NULL,
-	    archive_read_format_raw_read_header,
-	    archive_read_format_raw_read_data,
-	    archive_read_format_raw_read_data_skip,
-	    archive_read_format_raw_cleanup);
+	    tk_archive_read_format_raw_read_header,
+	    tk_archive_read_format_raw_read_data,
+	    tk_archive_read_format_raw_read_data_skip,
+	    tk_archive_read_format_raw_cleanup);
 	if (r != ARCHIVE_OK)
 		free(info);
 	return (r);
@@ -87,7 +87,7 @@ archive_read_support_format_raw(struct archive *_a)
  * include "raw" as part of support_format_all().
  */
 static int
-archive_read_format_raw_bid(struct archive_read *a)
+tk_archive_read_format_raw_bid(struct archive_read *a)
 {
 
 	if (__archive_read_ahead(a, 1, NULL) == NULL)
@@ -99,7 +99,7 @@ archive_read_format_raw_bid(struct archive_read *a)
  * Mock up a fake header.
  */
 static int
-archive_read_format_raw_read_header(struct archive_read *a,
+tk_archive_read_format_raw_read_header(struct archive_read *a,
     struct archive_entry *entry)
 {
 	struct raw_info *info;
@@ -110,14 +110,14 @@ archive_read_format_raw_read_header(struct archive_read *a,
 
 	a->archive.archive_format = ARCHIVE_FORMAT_RAW;
 	a->archive.archive_format_name = "Raw data";
-	archive_entry_set_pathname(entry, "data");
+	tk_archive_entry_set_pathname(entry, "data");
 	/* XXX should we set mode to mimic a regular file? XXX */
 	/* I'm deliberately leaving most fields unset here. */
 	return (ARCHIVE_OK);
 }
 
 static int
-archive_read_format_raw_read_data(struct archive_read *a,
+tk_archive_read_format_raw_read_data(struct archive_read *a,
     const void **buff, size_t *size, off_t *offset)
 {
 	struct raw_info *info;
@@ -151,7 +151,7 @@ archive_read_format_raw_read_data(struct archive_read *a,
 }
 
 static int
-archive_read_format_raw_read_data_skip(struct archive_read *a)
+tk_archive_read_format_raw_read_data_skip(struct archive_read *a)
 {
 	struct raw_info *info;
 	off_t bytes_skipped;
@@ -174,7 +174,7 @@ archive_read_format_raw_read_data_skip(struct archive_read *a)
 }
 
 static int
-archive_read_format_raw_cleanup(struct archive_read *a)
+tk_archive_read_format_raw_cleanup(struct archive_read *a)
 {
 	struct raw_info *info;
 

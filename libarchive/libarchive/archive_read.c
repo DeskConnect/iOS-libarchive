@@ -58,19 +58,19 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read.c 201157 2009-12-29 05:30:2
 static int	build_stream(struct archive_read *);
 static int	choose_format(struct archive_read *);
 static int	cleanup_filters(struct archive_read *);
-static struct archive_vtable *archive_read_vtable(void);
+static struct archive_vtable *tk_archive_read_vtable(void);
 static int	_archive_read_close(struct archive *);
 static int	_archive_read_finish(struct archive *);
 
 static struct archive_vtable *
-archive_read_vtable(void)
+tk_archive_read_vtable(void)
 {
 	static struct archive_vtable av;
 	static int inited = 0;
 
 	if (!inited) {
-		av.archive_finish = _archive_read_finish;
-		av.archive_close = _archive_read_close;
+		av.tk_archive_finish = _archive_read_finish;
+		av.tk_archive_close = _archive_read_close;
 	}
 	return (&av);
 }
@@ -79,7 +79,7 @@ archive_read_vtable(void)
  * Allocate, initialize and return a struct archive object.
  */
 struct archive *
-archive_read_new(void)
+tk_archive_read_new(void)
 {
 	struct archive_read *a;
 
@@ -90,8 +90,8 @@ archive_read_new(void)
 	a->archive.magic = ARCHIVE_READ_MAGIC;
 
 	a->archive.state = ARCHIVE_STATE_NEW;
-	a->entry = archive_entry_new();
-	a->archive.vtable = archive_read_vtable();
+	a->entry = tk_archive_entry_new();
+	a->archive.vtable = tk_archive_read_vtable();
 
 	return (&a->archive);
 }
@@ -100,7 +100,7 @@ archive_read_new(void)
  * Record the do-not-extract-to file. This belongs in archive_read_extract.c.
  */
 void
-archive_read_extract_set_skip_file(struct archive *_a, dev_t d, ino_t i)
+tk_archive_read_extract_set_skip_file(struct archive *_a, dev_t d, ino_t i)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	__archive_check_magic(_a, ARCHIVE_READ_MAGIC, ARCHIVE_STATE_ANY,
@@ -113,7 +113,7 @@ archive_read_extract_set_skip_file(struct archive *_a, dev_t d, ino_t i)
  * Set read options for the format.
  */
 int
-archive_read_set_format_options(struct archive *_a, const char *s)
+tk_archive_read_set_format_options(struct archive *_a, const char *s)
 {
 	struct archive_read *a;
 	struct archive_format_descriptor *format;
@@ -150,7 +150,7 @@ archive_read_set_format_options(struct archive *_a, const char *s)
 		}
 	}
 	if (len < 0) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Illegal format options.");
 		return (ARCHIVE_WARN);
 	}
@@ -161,7 +161,7 @@ archive_read_set_format_options(struct archive *_a, const char *s)
  * Set read options for the filter.
  */
 int
-archive_read_set_filter_options(struct archive *_a, const char *s)
+tk_archive_read_set_filter_options(struct archive *_a, const char *s)
 {
 	struct archive_read *a;
 	struct archive_read_filter *filter;
@@ -197,7 +197,7 @@ archive_read_set_filter_options(struct archive *_a, const char *s)
 		}
 	}
 	if (len < 0) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Illegal format options.");
 		return (ARCHIVE_WARN);
 	}
@@ -208,18 +208,18 @@ archive_read_set_filter_options(struct archive *_a, const char *s)
  * Set read options for the format and the filter.
  */
 int
-archive_read_set_options(struct archive *_a, const char *s)
+tk_archive_read_set_options(struct archive *_a, const char *s)
 {
 	int r;
 
 	__archive_check_magic(_a, ARCHIVE_READ_MAGIC, ARCHIVE_STATE_NEW,
 	    "archive_read_set_options");
-	archive_clear_error(_a);
+	tk_archive_clear_error(_a);
 
-	r = archive_read_set_format_options(_a, s);
+	r = tk_archive_read_set_format_options(_a, s);
 	if (r != ARCHIVE_OK)
 		return (r);
-	r = archive_read_set_filter_options(_a, s);
+	r = tk_archive_read_set_filter_options(_a, s);
 	if (r != ARCHIVE_OK)
 		return (r);
 	return (ARCHIVE_OK);
@@ -229,13 +229,13 @@ archive_read_set_options(struct archive *_a, const char *s)
  * Open the archive
  */
 int
-archive_read_open(struct archive *a, void *client_data,
-    archive_open_callback *client_opener, archive_read_callback *client_reader,
-    archive_close_callback *client_closer)
+tk_archive_read_open(struct archive *a, void *client_data,
+    tk_archive_open_callback *client_opener, tk_archive_read_callback *client_reader,
+    tk_archive_close_callback *client_closer)
 {
-	/* Old archive_read_open() is just a thin shell around
+	/* Old tk_archive_read_open() is just a thin shell around
 	 * archive_read_open2. */
-	return archive_read_open2(a, client_data, client_opener,
+	return tk_archive_read_open2(a, client_data, client_opener,
 	    client_reader, NULL, client_closer);
 }
 
@@ -288,11 +288,11 @@ client_close_proxy(struct archive_read_filter *self)
 
 
 int
-archive_read_open2(struct archive *_a, void *client_data,
-    archive_open_callback *client_opener,
-    archive_read_callback *client_reader,
-    archive_skip_callback *client_skipper,
-    archive_close_callback *client_closer)
+tk_archive_read_open2(struct archive *_a, void *client_data,
+    tk_archive_open_callback *client_opener,
+    tk_archive_read_callback *client_reader,
+    tk_archive_skip_callback *client_skipper,
+    tk_archive_close_callback *client_closer)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct archive_read_filter *filter;
@@ -300,7 +300,7 @@ archive_read_open2(struct archive *_a, void *client_data,
 
 	__archive_check_magic(_a, ARCHIVE_READ_MAGIC, ARCHIVE_STATE_NEW,
 	    "archive_read_open");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 
 	if (client_reader == NULL)
 		__archive_errx(1,
@@ -408,7 +408,7 @@ build_stream(struct archive_read *a)
  * Read header of next entry.
  */
 int
-archive_read_next_header2(struct archive *_a, struct archive_entry *entry)
+tk_archive_read_next_header2(struct archive *_a, struct archive_entry *entry)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	int slot, ret;
@@ -418,8 +418,8 @@ archive_read_next_header2(struct archive *_a, struct archive_entry *entry)
 	    "archive_read_next_header");
 
 	++_a->file_count;
-	archive_entry_clear(entry);
-	archive_clear_error(&a->archive);
+	tk_archive_entry_clear(entry);
+	tk_archive_clear_error(&a->archive);
 
 	/*
 	 * If no format has yet been chosen, choose one.
@@ -438,9 +438,9 @@ archive_read_next_header2(struct archive *_a, struct archive_entry *entry)
 	 * (This is especially important for GNU incremental directories.)
 	 */
 	if (a->archive.state == ARCHIVE_STATE_DATA) {
-		ret = archive_read_data_skip(&a->archive);
+		ret = tk_archive_read_data_skip(&a->archive);
 		if (ret == ARCHIVE_EOF) {
-			archive_set_error(&a->archive, EIO, "Premature end-of-file.");
+			tk_archive_set_error(&a->archive, EIO, "Premature end-of-file.");
 			a->archive.state = ARCHIVE_STATE_FATAL;
 			return (ARCHIVE_FATAL);
 		}
@@ -481,12 +481,12 @@ archive_read_next_header2(struct archive *_a, struct archive_entry *entry)
 }
 
 int
-archive_read_next_header(struct archive *_a, struct archive_entry **entryp)
+tk_archive_read_next_header(struct archive *_a, struct archive_entry **entryp)
 {
 	int ret;
 	struct archive_read *a = (struct archive_read *)_a;
 	*entryp = NULL;
-	ret = archive_read_next_header2(_a, a->entry);
+	ret = tk_archive_read_next_header2(_a, a->entry);
 	*entryp = a->entry;
 	return ret;
 }
@@ -535,7 +535,7 @@ choose_format(struct archive_read *a)
 	 * can't support this stream.
 	 */
 	if (best_bid < 1) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
 		    "Unrecognized archive format");
 		return (ARCHIVE_FATAL);
 	}
@@ -548,7 +548,7 @@ choose_format(struct archive_read *a)
  * the last header started.
  */
 int64_t
-archive_read_header_position(struct archive *_a)
+tk_archive_read_header_position(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	__archive_check_magic(_a, ARCHIVE_READ_MAGIC,
@@ -568,7 +568,7 @@ archive_read_header_position(struct archive *_a)
  * to read a single entry body.
  */
 ssize_t
-archive_read_data(struct archive *_a, void *buff, size_t s)
+tk_archive_read_data(struct archive *_a, void *buff, size_t s)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	char	*dest;
@@ -583,7 +583,7 @@ archive_read_data(struct archive *_a, void *buff, size_t s)
 	while (s > 0) {
 		if (a->read_data_remaining == 0) {
 			read_buf = a->read_data_block;
-			r = archive_read_data_block(&a->archive, &read_buf,
+			r = tk_archive_read_data_block(&a->archive, &read_buf,
 			    &a->read_data_remaining, &a->read_data_offset);
 			a->read_data_block = read_buf;
 			if (r == ARCHIVE_EOF)
@@ -598,7 +598,7 @@ archive_read_data(struct archive *_a, void *buff, size_t s)
 		}
 
 		if (a->read_data_offset < a->read_data_output_offset) {
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
 			    "Encountered out-of-order sparse blocks");
 			return (ARCHIVE_RETRY);
 		}
@@ -647,10 +647,10 @@ archive_read_data(struct archive *_a, void *buff, size_t s)
  * even if an error occurred while reading data.
  */
 int
-archive_read_data_into_buffer(struct archive *a, void *d, ssize_t len)
+tk_archive_read_data_into_buffer(struct archive *a, void *d, ssize_t len)
 {
 
-	archive_read_data(a, d, len);
+	tk_archive_read_data(a, d, len);
 	return (ARCHIVE_OK);
 }
 #endif
@@ -659,7 +659,7 @@ archive_read_data_into_buffer(struct archive *a, void *d, ssize_t len)
  * Skip over all remaining data in this entry.
  */
 int
-archive_read_data_skip(struct archive *_a)
+tk_archive_read_data_skip(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	int r;
@@ -673,7 +673,7 @@ archive_read_data_skip(struct archive *_a)
 	if (a->format->read_data_skip != NULL)
 		r = (a->format->read_data_skip)(a);
 	else {
-		while ((r = archive_read_data_block(&a->archive,
+		while ((r = tk_archive_read_data_block(&a->archive,
 			    &buff, &size, &offset))
 		    == ARCHIVE_OK)
 			;
@@ -695,7 +695,7 @@ archive_read_data_skip(struct archive *_a)
  * the end of entry is encountered.
  */
 int
-archive_read_data_block(struct archive *_a,
+tk_archive_read_data_block(struct archive *_a,
     const void **buff, size_t *size, off_t *offset)
 {
 	struct archive_read *a = (struct archive_read *)_a;
@@ -703,7 +703,7 @@ archive_read_data_block(struct archive *_a,
 	    "archive_read_data_block");
 
 	if (a->format->read_data == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "Internal error: "
 		    "No format_read_data_block function registered");
 		return (ARCHIVE_FATAL);
@@ -728,7 +728,7 @@ _archive_read_close(struct archive *_a)
 
 	__archive_check_magic(&a->archive, ARCHIVE_READ_MAGIC,
 	    ARCHIVE_STATE_ANY, "archive_read_close");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 	a->archive.state = ARCHIVE_STATE_CLOSED;
 
 
@@ -789,7 +789,7 @@ _archive_read_finish(struct archive *_a)
 	__archive_check_magic(_a, ARCHIVE_READ_MAGIC, ARCHIVE_STATE_ANY,
 	    "archive_read_finish");
 	if (a->archive.state != ARCHIVE_STATE_CLOSED)
-		r = archive_read_close(&a->archive);
+		r = tk_archive_read_close(&a->archive);
 
 	/* Cleanup format-specific data. */
 	slots = sizeof(a->formats) / sizeof(a->formats[0]);
@@ -799,9 +799,9 @@ _archive_read_finish(struct archive *_a)
 			(a->formats[i].cleanup)(a);
 	}
 
-	archive_string_free(&a->archive.error_string);
+	tk_archive_string_free(&a->archive.error_string);
 	if (a->entry)
-		archive_entry_free(a->entry);
+		tk_archive_entry_free(a->entry);
 	a->archive.magic = 0;
 	free(a);
 #if ARCHIVE_API_VERSION > 1
@@ -1060,7 +1060,7 @@ __archive_read_filter_ahead(struct archive_read_filter *filter,
 				while (s < min) {
 					t *= 2;
 					if (t <= s) { /* Integer overflow! */
-						archive_set_error(
+						tk_archive_set_error(
 							&filter->archive->archive,
 							ENOMEM,
 						    "Unable to allocate copy buffer");
@@ -1074,7 +1074,7 @@ __archive_read_filter_ahead(struct archive_read_filter *filter,
 				/* Now s >= min, so allocate a new buffer. */
 				p = (char *)malloc(s);
 				if (p == NULL) {
-					archive_set_error(
+					tk_archive_set_error(
 						&filter->archive->archive,
 						ENOMEM,
 					    "Unable to allocate copy buffer");
@@ -1165,7 +1165,7 @@ __archive_read_skip(struct archive_read *a, int64_t request)
 	/* We hit EOF before we satisfied the skip request. */
 	if (skipped < 0)  // Map error code to 0 for error message below.
 		skipped = 0;
-	archive_set_error(&a->archive,
+	tk_archive_set_error(&a->archive,
 	    ARCHIVE_ERRNO_MISC,
 	    "Truncated input file (needed %jd bytes, only %jd available)",
 	    (intmax_t)request, (intmax_t)skipped);

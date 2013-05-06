@@ -56,32 +56,32 @@ static off_t	memory_read_skip(struct archive *, void *, off_t request);
 static ssize_t	memory_read(struct archive *, void *, const void **buff);
 
 int
-archive_read_open_memory(struct archive *a, void *buff, size_t size)
+tk_archive_read_open_memory(struct archive *a, void *buff, size_t size)
 {
-	return archive_read_open_memory2(a, buff, size, size);
+	return tk_archive_read_open_memory2(a, buff, size, size);
 }
 
 /*
- * Don't use _open_memory2() in production code; the archive_read_open_memory()
+ * Don't use _open_memory2() in production code; the tk_archive_read_open_memory()
  * version is the one you really want.  This is just here so that
  * test harnesses can exercise block operations inside the library.
  */
 int
-archive_read_open_memory2(struct archive *a, void *buff,
+tk_archive_read_open_memory2(struct archive *a, void *buff,
     size_t size, size_t read_size)
 {
 	struct read_memory_data *mine;
 
 	mine = (struct read_memory_data *)malloc(sizeof(*mine));
 	if (mine == NULL) {
-		archive_set_error(a, ENOMEM, "No memory");
+		tk_archive_set_error(a, ENOMEM, "No memory");
 		return (ARCHIVE_FATAL);
 	}
 	memset(mine, 0, sizeof(*mine));
 	mine->buffer = (unsigned char *)buff;
 	mine->end = mine->buffer + size;
 	mine->read_size = read_size;
-	return (archive_read_open2(a, mine, memory_read_open,
+	return (tk_archive_read_open2(a, mine, memory_read_open,
 		    memory_read, memory_read_skip, memory_read_close));
 }
 

@@ -39,20 +39,20 @@ static const char *trivial_lookup_gname(void *, gid_t gid);
 static const char *trivial_lookup_uname(void *, uid_t uid);
 
 static struct archive_vtable *
-archive_read_disk_vtable(void)
+tk_archive_read_disk_vtable(void)
 {
 	static struct archive_vtable av;
 	static int inited = 0;
 
 	if (!inited) {
-		av.archive_finish = _archive_read_finish;
-		av.archive_close = _archive_read_close;
+		av.tk_archive_finish = _archive_read_finish;
+		av.tk_archive_close = _archive_read_close;
 	}
 	return (&av);
 }
 
 const char *
-archive_read_disk_gname(struct archive *_a, gid_t gid)
+tk_archive_read_disk_gname(struct archive *_a, gid_t gid)
 {
 	struct archive_read_disk *a = (struct archive_read_disk *)_a;
 	if (a->lookup_gname != NULL)
@@ -61,7 +61,7 @@ archive_read_disk_gname(struct archive *_a, gid_t gid)
 }
 
 const char *
-archive_read_disk_uname(struct archive *_a, uid_t uid)
+tk_archive_read_disk_uname(struct archive *_a, uid_t uid)
 {
 	struct archive_read_disk *a = (struct archive_read_disk *)_a;
 	if (a->lookup_uname != NULL)
@@ -70,7 +70,7 @@ archive_read_disk_uname(struct archive *_a, uid_t uid)
 }
 
 int
-archive_read_disk_set_gname_lookup(struct archive *_a,
+tk_archive_read_disk_set_gname_lookup(struct archive *_a,
     void *private_data,
     const char * (*lookup_gname)(void *private, gid_t gid),
     void (*cleanup_gname)(void *private))
@@ -89,7 +89,7 @@ archive_read_disk_set_gname_lookup(struct archive *_a,
 }
 
 int
-archive_read_disk_set_uname_lookup(struct archive *_a,
+tk_archive_read_disk_set_uname_lookup(struct archive *_a,
     void *private_data,
     const char * (*lookup_uname)(void *private, uid_t uid),
     void (*cleanup_uname)(void *private))
@@ -111,7 +111,7 @@ archive_read_disk_set_uname_lookup(struct archive *_a,
  * Create a new archive_read_disk object and initialize it with global state.
  */
 struct archive *
-archive_read_disk_new(void)
+tk_archive_read_disk_new(void)
 {
 	struct archive_read_disk *a;
 
@@ -122,7 +122,7 @@ archive_read_disk_new(void)
 	a->archive.magic = ARCHIVE_READ_DISK_MAGIC;
 	/* We're ready to write a header immediately. */
 	a->archive.state = ARCHIVE_STATE_HEADER;
-	a->archive.vtable = archive_read_disk_vtable();
+	a->archive.vtable = tk_archive_read_disk_vtable();
 	a->lookup_uname = trivial_lookup_uname;
 	a->lookup_gname = trivial_lookup_gname;
 	return (&a->archive);
@@ -137,7 +137,7 @@ _archive_read_finish(struct archive *_a)
 		(a->cleanup_gname)(a->lookup_gname_data);
 	if (a->cleanup_uname != NULL && a->lookup_uname_data != NULL)
 		(a->cleanup_uname)(a->lookup_uname_data);
-	archive_string_free(&a->archive.error_string);
+	tk_archive_string_free(&a->archive.error_string);
 	free(a);
 	return (ARCHIVE_OK);
 }
@@ -150,7 +150,7 @@ _archive_read_close(struct archive *_a)
 }
 
 int
-archive_read_disk_set_symlink_logical(struct archive *_a)
+tk_archive_read_disk_set_symlink_logical(struct archive *_a)
 {
 	struct archive_read_disk *a = (struct archive_read_disk *)_a;
 	a->symlink_mode = 'L';
@@ -159,7 +159,7 @@ archive_read_disk_set_symlink_logical(struct archive *_a)
 }
 
 int
-archive_read_disk_set_symlink_physical(struct archive *_a)
+tk_archive_read_disk_set_symlink_physical(struct archive *_a)
 {
 	struct archive_read_disk *a = (struct archive_read_disk *)_a;
 	a->symlink_mode = 'P';
@@ -168,7 +168,7 @@ archive_read_disk_set_symlink_physical(struct archive *_a)
 }
 
 int
-archive_read_disk_set_symlink_hybrid(struct archive *_a)
+tk_archive_read_disk_set_symlink_hybrid(struct archive *_a)
 {
 	struct archive_read_disk *a = (struct archive_read_disk *)_a;
 	a->symlink_mode = 'H';

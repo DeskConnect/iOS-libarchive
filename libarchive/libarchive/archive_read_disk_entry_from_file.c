@@ -82,7 +82,7 @@ static int setup_xattrs(struct archive_read_disk *,
     struct archive_entry *, int fd);
 
 int
-archive_read_disk_entry_from_file(struct archive *_a,
+tk_archive_read_disk_entry_from_file(struct archive *_a,
     struct archive_entry *entry,
     int fd, const struct stat *st)
 {
@@ -92,10 +92,10 @@ archive_read_disk_entry_from_file(struct archive *_a,
 	int initial_fd = fd;
 	int r, r1;
 
-	archive_clear_error(_a);
-	path = archive_entry_sourcepath(entry);
+	tk_archive_clear_error(_a);
+	path = tk_archive_entry_sourcepath(entry);
 	if (path == NULL)
-		path = archive_entry_pathname(entry);
+		path = tk_archive_entry_pathname(entry);
 
 #ifdef EXT2_IOC_GETFLAGS
 	/* Linux requires an extra ioctl to pull the flags.  Although
@@ -108,7 +108,7 @@ archive_read_disk_entry_from_file(struct archive *_a,
 			unsigned long stflags;
 			int r = ioctl(fd, EXT2_IOC_GETFLAGS, &stflags);
 			if (r == 0 && stflags != 0)
-				archive_entry_set_fflags(entry, stflags, 0);
+				tk_archive_entry_set_fflags(entry, stflags, 0);
 		}
 	}
 #endif
@@ -122,7 +122,7 @@ archive_read_disk_entry_from_file(struct archive *_a,
 #if HAVE_FSTAT
 		if (fd >= 0) {
 			if (fstat(fd, &s) != 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Can't fstat");
 				return (ARCHIVE_FAILED);
 			}
@@ -131,34 +131,34 @@ archive_read_disk_entry_from_file(struct archive *_a,
 #if HAVE_LSTAT
 		if (!a->follow_symlinks) {
 			if (lstat(path, &s) != 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Can't lstat %s", path);
 				return (ARCHIVE_FAILED);
 			}
 		} else
 #endif
 		if (stat(path, &s) != 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Can't lstat %s", path);
 			return (ARCHIVE_FAILED);
 		}
 		st = &s;
 	}
-	archive_entry_copy_stat(entry, st);
+	tk_archive_entry_copy_stat(entry, st);
 
 	/* Lookup uname/gname */
-	name = archive_read_disk_uname(_a, archive_entry_uid(entry));
+	name = tk_archive_read_disk_uname(_a, tk_archive_entry_uid(entry));
 	if (name != NULL)
-		archive_entry_copy_uname(entry, name);
-	name = archive_read_disk_gname(_a, archive_entry_gid(entry));
+		tk_archive_entry_copy_uname(entry, name);
+	name = tk_archive_read_disk_gname(_a, tk_archive_entry_gid(entry));
 	if (name != NULL)
-		archive_entry_copy_gname(entry, name);
+		tk_archive_entry_copy_gname(entry, name);
 
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
 	/* On FreeBSD, we get flags for free with the stat. */
 	/* TODO: Does this belong in copy_stat()? */
 	if (st->st_flags != 0)
-		archive_entry_set_fflags(entry, st->st_flags, 0);
+		tk_archive_entry_set_fflags(entry, st->st_flags, 0);
 #endif
 
 #ifdef HAVE_READLINK
@@ -166,12 +166,12 @@ archive_read_disk_entry_from_file(struct archive *_a,
 		char linkbuffer[PATH_MAX + 1];
 		int lnklen = readlink(path, linkbuffer, PATH_MAX);
 		if (lnklen < 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Couldn't read link data");
 			return (ARCHIVE_FAILED);
 		}
 		linkbuffer[lnklen] = 0;
-		archive_entry_set_symlink(entry, linkbuffer);
+		tk_archive_entry_set_symlink(entry, linkbuffer);
 	}
 #endif
 
@@ -196,11 +196,11 @@ setup_acls_posix1e(struct archive_read_disk *a,
 	const char	*accpath;
 	acl_t		 acl;
 
-	accpath = archive_entry_sourcepath(entry);
+	accpath = tk_archive_entry_sourcepath(entry);
 	if (accpath == NULL)
-		accpath = archive_entry_pathname(entry);
+		accpath = tk_archive_entry_pathname(entry);
 
-	archive_entry_acl_clear(entry);
+	tk_archive_entry_acl_clear(entry);
 
 	/* Retrieve access ACL from file. */
 	if (fd >= 0)
@@ -210,7 +210,7 @@ setup_acls_posix1e(struct archive_read_disk *a,
 		acl = acl_get_link_np(accpath, ACL_TYPE_ACCESS);
 #else
 	else if ((!a->follow_symlinks)
-	    && (archive_entry_filetype(entry) == AE_IFLNK))
+	    && (tk_archive_entry_filetype(entry) == AE_IFLNK))
 		/* We can't get the ACL of a symlink, so we assume it can't
 		   have one. */
 		acl = NULL;
@@ -224,7 +224,7 @@ setup_acls_posix1e(struct archive_read_disk *a,
 	}
 
 	/* Only directories can have default ACLs. */
-	if (S_ISDIR(archive_entry_mode(entry))) {
+	if (S_ISDIR(tk_archive_entry_mode(entry))) {
 		acl = acl_get_file(accpath, ACL_TYPE_DEFAULT);
 		if (acl != NULL) {
 			setup_acl_posix1e(a, entry, acl,
@@ -256,11 +256,11 @@ setup_acl_posix1e(struct archive_read_disk *a,
 		acl_get_tag_type(acl_entry, &acl_tag);
 		if (acl_tag == ACL_USER) {
 			ae_id = (int)*(uid_t *)acl_get_qualifier(acl_entry);
-			ae_name = archive_read_disk_uname(&a->archive, ae_id);
+			ae_name = tk_archive_read_disk_uname(&a->archive, ae_id);
 			ae_tag = ARCHIVE_ENTRY_ACL_USER;
 		} else if (acl_tag == ACL_GROUP) {
 			ae_id = (int)*(gid_t *)acl_get_qualifier(acl_entry);
-			ae_name = archive_read_disk_gname(&a->archive, ae_id);
+			ae_name = tk_archive_read_disk_gname(&a->archive, ae_id);
 			ae_tag = ARCHIVE_ENTRY_ACL_GROUP;
 		} else if (acl_tag == ACL_MASK) {
 			ae_tag = ARCHIVE_ENTRY_ACL_MASK;
@@ -288,7 +288,7 @@ setup_acl_posix1e(struct archive_read_disk *a,
 		if (ACL_GET_PERM(acl_permset, ACL_WRITE))
 			ae_perm |= ARCHIVE_ENTRY_ACL_WRITE;
 
-		archive_entry_acl_add_entry(entry,
+		tk_archive_entry_acl_add_entry(entry,
 		    archive_entry_acl_type, ae_perm, ae_tag,
 		    ae_id, ae_name);
 
@@ -331,9 +331,9 @@ setup_xattr(struct archive_read_disk *a,
 
 	(void)fd; /* UNUSED */
 
-	accpath = archive_entry_sourcepath(entry);
+	accpath = tk_archive_entry_sourcepath(entry);
 	if (accpath == NULL)
-		accpath = archive_entry_pathname(entry);
+		accpath = tk_archive_entry_pathname(entry);
 
 	if (!a->follow_symlinks)
 		size = lgetxattr(accpath, name, NULL, 0);
@@ -341,13 +341,13 @@ setup_xattr(struct archive_read_disk *a,
 		size = getxattr(accpath, name, NULL, 0);
 
 	if (size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Couldn't query extended attribute");
 		return (ARCHIVE_WARN);
 	}
 
 	if (size > 0 && (value = malloc(size)) == NULL) {
-		archive_set_error(&a->archive, errno, "Out of memory");
+		tk_archive_set_error(&a->archive, errno, "Out of memory");
 		return (ARCHIVE_FATAL);
 	}
 
@@ -357,12 +357,12 @@ setup_xattr(struct archive_read_disk *a,
 		size = getxattr(accpath, name, value, size);
 
 	if (size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Couldn't read extended attribute");
 		return (ARCHIVE_WARN);
 	}
 
-	archive_entry_xattr_add_entry(entry, name, value, size);
+	tk_archive_entry_xattr_add_entry(entry, name, value, size);
 
 	free(value);
 	return (ARCHIVE_OK);
@@ -377,9 +377,9 @@ setup_xattrs(struct archive_read_disk *a,
 	ssize_t list_size;
 
 
-	path = archive_entry_sourcepath(entry);
+	path = tk_archive_entry_sourcepath(entry);
 	if (path == NULL)
-		path = archive_entry_pathname(entry);
+		path = tk_archive_entry_pathname(entry);
 
 	if (!a->follow_symlinks)
 		list_size = llistxattr(path, NULL, 0);
@@ -389,7 +389,7 @@ setup_xattrs(struct archive_read_disk *a,
 	if (list_size == -1) {
 		if (errno == ENOTSUP)
 			return (ARCHIVE_OK);
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 			"Couldn't list extended attributes");
 		return (ARCHIVE_WARN);
 	}
@@ -398,7 +398,7 @@ setup_xattrs(struct archive_read_disk *a,
 		return (ARCHIVE_OK);
 
 	if ((list = malloc(list_size)) == NULL) {
-		archive_set_error(&a->archive, errno, "Out of memory");
+		tk_archive_set_error(&a->archive, errno, "Out of memory");
 		return (ARCHIVE_FATAL);
 	}
 
@@ -408,7 +408,7 @@ setup_xattrs(struct archive_read_disk *a,
 		list_size = listxattr(path, list, list_size);
 
 	if (list_size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 			"Couldn't retrieve extended attributes");
 		free(list);
 		return (ARCHIVE_WARN);
@@ -451,9 +451,9 @@ setup_xattr(struct archive_read_disk *a, struct archive_entry *entry,
 
 	(void)fd; /* UNUSED */
 
-	accpath = archive_entry_sourcepath(entry);
+	accpath = tk_archive_entry_sourcepath(entry);
 	if (accpath == NULL)
-		accpath = archive_entry_pathname(entry);
+		accpath = tk_archive_entry_pathname(entry);
 
 	if (!a->follow_symlinks)
 		size = extattr_get_link(accpath, namespace, name, NULL, 0);
@@ -461,13 +461,13 @@ setup_xattr(struct archive_read_disk *a, struct archive_entry *entry,
 		size = extattr_get_file(accpath, namespace, name, NULL, 0);
 
 	if (size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Couldn't query extended attribute");
 		return (ARCHIVE_WARN);
 	}
 
 	if (size > 0 && (value = malloc(size)) == NULL) {
-		archive_set_error(&a->archive, errno, "Out of memory");
+		tk_archive_set_error(&a->archive, errno, "Out of memory");
 		return (ARCHIVE_FATAL);
 	}
 
@@ -477,12 +477,12 @@ setup_xattr(struct archive_read_disk *a, struct archive_entry *entry,
 		size = extattr_get_file(accpath, namespace, name, value, size);
 
 	if (size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Couldn't read extended attribute");
 		return (ARCHIVE_WARN);
 	}
 
-	archive_entry_xattr_add_entry(entry, fullname, value, size);
+	tk_archive_entry_xattr_add_entry(entry, fullname, value, size);
 
 	free(value);
 	return (ARCHIVE_OK);
@@ -498,9 +498,9 @@ setup_xattrs(struct archive_read_disk *a,
 	const char *path;
 	int namespace = EXTATTR_NAMESPACE_USER;
 
-	path = archive_entry_sourcepath(entry);
+	path = tk_archive_entry_sourcepath(entry);
 	if (path == NULL)
-		path = archive_entry_pathname(entry);
+		path = tk_archive_entry_pathname(entry);
 
 	if (!a->follow_symlinks)
 		list_size = extattr_list_link(path, namespace, NULL, 0);
@@ -510,7 +510,7 @@ setup_xattrs(struct archive_read_disk *a,
 	if (list_size == -1 && errno == EOPNOTSUPP)
 		return (ARCHIVE_OK);
 	if (list_size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 			"Couldn't list extended attributes");
 		return (ARCHIVE_WARN);
 	}
@@ -519,7 +519,7 @@ setup_xattrs(struct archive_read_disk *a,
 		return (ARCHIVE_OK);
 
 	if ((list = malloc(list_size)) == NULL) {
-		archive_set_error(&a->archive, errno, "Out of memory");
+		tk_archive_set_error(&a->archive, errno, "Out of memory");
 		return (ARCHIVE_FATAL);
 	}
 
@@ -529,7 +529,7 @@ setup_xattrs(struct archive_read_disk *a,
 		list_size = extattr_list_file(path, namespace, list, list_size);
 
 	if (list_size == -1) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 			"Couldn't retrieve extended attributes");
 		free(list);
 		return (ARCHIVE_WARN);
