@@ -233,67 +233,67 @@ create(const char *filename, int compress, const char **argv)
 	ssize_t len;
 	int fd;
 
-	a = archive_write_new();
+	a = tk_archive_write_new();
 	switch (compress) {
 #ifndef NO_BZIP2_CREATE
 	case 'j': case 'y':
-		archive_write_set_compression_bzip2(a);
+		tk_archive_write_set_compression_bzip2(a);
 		break;
 #endif
 #ifndef NO_COMPRESS_CREATE
 	case 'Z':
-		archive_write_set_compression_compress(a);
+		tk_archive_write_set_compression_compress(a);
 		break;
 #endif
 #ifndef NO_GZIP_CREATE
 	case 'z':
-		archive_write_set_compression_gzip(a);
+		tk_archive_write_set_compression_gzip(a);
 		break;
 #endif
 	default:
-		archive_write_set_compression_none(a);
+		tk_archive_write_set_compression_none(a);
 		break;
 	}
-	archive_write_set_format_ustar(a);
+	tk_archive_write_set_format_ustar(a);
 	if (strcmp(filename, "-") == 0)
 		filename = NULL;
-	archive_write_open_file(a, filename);
+	tk_archive_write_open_file(a, filename);
 
-	disk = archive_read_disk_new();
+	disk = tk_archive_read_disk_new();
 #ifndef NO_LOOKUP
-	archive_read_disk_set_standard_lookup(disk);
+	tk_archive_read_disk_set_standard_lookup(disk);
 #endif
 	while (*argv != NULL) {
 		struct tree *t = tree_open(*argv);
 		while (tree_next(t)) {
-			entry = archive_entry_new();
-			archive_entry_set_pathname(entry, tree_current_path(t));
-			archive_read_disk_entry_from_file(disk, entry, -1,
+			entry = tk_archive_entry_new();
+			tk_archive_entry_set_pathname(entry, tree_current_path(t));
+			tk_archive_read_disk_entry_from_file(disk, entry, -1,
 			    tree_current_stat(t));
 			if (verbose) {
 				msg("a ");
 				msg(tree_current_path(t));
 			}
-			archive_write_header(a, entry);
+			tk_archive_write_header(a, entry);
 			fd = open(tree_current_access_path(t), O_RDONLY);
 			len = read(fd, buff, sizeof(buff));
 			while (len > 0) {
-				archive_write_data(a, buff, len);
+				tk_archive_write_data(a, buff, len);
 				len = read(fd, buff, sizeof(buff));
 			}
 			close(fd);
-			archive_entry_free(entry);
+			tk_archive_entry_free(entry);
 			if (verbose)
 				msg("\n");
 		}
 		argv++;
 	}
-	archive_write_close(a);
-	archive_write_finish(a);
+	tk_archive_write_close(a);
+	tk_archive_write_finish(a);
 }
 #endif
 
-static void
+void
 extract(const char *filename, int do_extract, int flags)
 {
 	struct archive *a;
@@ -301,60 +301,59 @@ extract(const char *filename, int do_extract, int flags)
 	struct archive_entry *entry;
 	int r;
 
-	a = archive_read_new();
-	ext = archive_write_disk_new();
-	archive_write_disk_set_options(ext, flags);
+	a = tk_archive_read_new();
+	ext = tk_archive_write_disk_new();
+	tk_archive_write_disk_set_options(ext, flags);
 #ifndef NO_BZIP2_EXTRACT
-	archive_read_support_compression_bzip2(a);
+	tk_archive_read_support_compression_bzip2(a);
 #endif
 #ifndef NO_GZIP_EXTRACT
-	archive_read_support_compression_gzip(a);
+	tk_archive_read_support_compression_gzip(a);
 #endif
 #ifndef NO_COMPRESS_EXTRACT
-	archive_read_support_compression_compress(a);
+	tk_archive_read_support_compression_compress(a);
 #endif
 #ifndef NO_TAR_EXTRACT
-	archive_read_support_format_tar(a);
+	tk_archive_read_support_format_tar(a);
 #endif
 #ifndef NO_CPIO_EXTRACT
-	archive_read_support_format_cpio(a);
+	tk_archive_read_support_format_cpio(a);
 #endif
 #ifndef NO_LOOKUP
-	archive_write_disk_set_standard_lookup(ext);
+	tk_archive_write_disk_set_standard_lookup(ext);
 #endif
 	if (filename != NULL && strcmp(filename, "-") == 0)
 		filename = NULL;
-	if ((r = archive_read_open_file(a, filename, 10240))) {
-		errmsg(archive_error_string(a));
+	if ((r = tk_archive_read_open_file(a, filename, 10240))) {
+		errmsg(tk_archive_error_string(a));
 		errmsg("\n");
 		exit(r);
 	}
 	for (;;) {
-		r = archive_read_next_header(a, &entry);
+		r = tk_archive_read_next_header(a, &entry);
 		if (r == ARCHIVE_EOF)
 			break;
 		if (r != ARCHIVE_OK) {
-			errmsg(archive_error_string(a));
+			errmsg(tk_archive_error_string(a));
 			errmsg("\n");
 			exit(1);
 		}
 		if (verbose && do_extract)
 			msg("x ");
 		if (verbose || !do_extract)
-			msg(archive_entry_pathname(entry));
+			msg(tk_archive_entry_pathname(entry));
 		if (do_extract) {
-			r = archive_write_header(ext, entry);
+			r = tk_archive_write_header(ext, entry);
 			if (r != ARCHIVE_OK)
-				errmsg(archive_error_string(a));
+				errmsg(tk_archive_error_string(a));
 			else
 				copy_data(a, ext);
 		}
 		if (verbose || !do_extract)
 			msg("\n");
 	}
-	archive_read_close(a);
-	archive_read_finish(a);
-	exit(0);
+	tk_archive_read_close(a);
+	tk_archive_read_finish(a);
 }
 
 static int
@@ -366,16 +365,16 @@ copy_data(struct archive *ar, struct archive *aw)
 	off_t offset;
 
 	for (;;) {
-		r = archive_read_data_block(ar, &buff, &size, &offset);
+		r = tk_archive_read_data_block(ar, &buff, &size, &offset);
 		if (r == ARCHIVE_EOF) {
-			errmsg(archive_error_string(ar));
+//			errmsg(tk_archive_error_string(ar));
 			return (ARCHIVE_OK);
 		}
 		if (r != ARCHIVE_OK)
 			return (r);
-		r = archive_write_data_block(aw, buff, size, offset);
+		r = tk_archive_write_data_block(aw, buff, size, offset);
 		if (r != ARCHIVE_OK) {
-			errmsg(archive_error_string(ar));
+			errmsg(tk_archive_error_string(ar));
 			return (r);
 		}
 	}
