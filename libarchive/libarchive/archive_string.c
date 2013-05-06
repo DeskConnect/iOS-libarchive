@@ -188,7 +188,7 @@ __archive_strappend_w_utf8(struct archive_string *as, const wchar_t *w)
 		/* (No encoding has a single character >16 bytes.) */
 		if ((size_t)(p - buff) >= (size_t)(sizeof(buff) - 16)) {
 			*p = '\0';
-			archive_strcat(as, buff);
+			tk_archive_strcat(as, buff);
 			p = buff;
 		}
 		wc = *w++;
@@ -226,7 +226,7 @@ __archive_strappend_w_utf8(struct archive_string *as, const wchar_t *w)
 		}
 	}
 	*p = '\0';
-	archive_strcat(as, buff);
+	tk_archive_strcat(as, buff);
 	return (return_val);
 }
 
@@ -432,7 +432,7 @@ __archive_strappend_w_mbs(struct archive_string *as, const wchar_t *w)
 		/* (No encoding has a single character >16 bytes.) */
 		if ((size_t)(p - buff) >= (size_t)(sizeof(buff) - MB_CUR_MAX)) {
 			*p = '\0';
-			archive_strcat(as, buff);
+			tk_archive_strcat(as, buff);
 			p = buff;
 		}
 #if HAVE_WCRTOMB
@@ -445,7 +445,7 @@ __archive_strappend_w_mbs(struct archive_string *as, const wchar_t *w)
 		p += n;
 	}
 	*p = '\0';
-	archive_strcat(as, buff);
+	tk_archive_strcat(as, buff);
 	return (as);
 #endif
 }

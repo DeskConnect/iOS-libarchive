@@ -31,13 +31,13 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read_support_format_empty.c 1915
 #include "archive_private.h"
 #include "archive_read_private.h"
 
-static int	archive_read_format_empty_bid(struct archive_read *);
-static int	archive_read_format_empty_read_data(struct archive_read *,
+static int	tk_archive_read_format_empty_bid(struct archive_read *);
+static int	tk_archive_read_format_empty_read_data(struct archive_read *,
 		    const void **, size_t *, off_t *);
-static int	archive_read_format_empty_read_header(struct archive_read *,
+static int	tk_archive_read_format_empty_read_header(struct archive_read *,
 		    struct archive_entry *);
 int
-archive_read_support_format_empty(struct archive *_a)
+tk_archive_read_support_format_empty(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	int r;
@@ -45,10 +45,10 @@ archive_read_support_format_empty(struct archive *_a)
 	r = __archive_read_register_format(a,
 	    NULL,
 	    NULL,
-	    archive_read_format_empty_bid,
+	    tk_archive_read_format_empty_bid,
 	    NULL,
-	    archive_read_format_empty_read_header,
-	    archive_read_format_empty_read_data,
+	    tk_archive_read_format_empty_read_header,
+	    tk_archive_read_format_empty_read_data,
 	    NULL,
 	    NULL);
 
@@ -57,7 +57,7 @@ archive_read_support_format_empty(struct archive *_a)
 
 
 static int
-archive_read_format_empty_bid(struct archive_read *a)
+tk_archive_read_format_empty_bid(struct archive_read *a)
 {
 	ssize_t avail;
 
@@ -68,7 +68,7 @@ archive_read_format_empty_bid(struct archive_read *a)
 }
 
 static int
-archive_read_format_empty_read_header(struct archive_read *a,
+tk_archive_read_format_empty_read_header(struct archive_read *a,
     struct archive_entry *entry)
 {
 	(void)a; /* UNUSED */
@@ -81,7 +81,7 @@ archive_read_format_empty_read_header(struct archive_read *a,
 }
 
 static int
-archive_read_format_empty_read_data(struct archive_read *a,
+tk_archive_read_format_empty_read_data(struct archive_read *a,
     const void **buff, size_t *size, off_t *offset)
 {
 	(void)a; /* UNUSED */

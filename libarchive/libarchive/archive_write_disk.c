@@ -249,7 +249,7 @@ static uid_t	trivial_lookup_uid(void *, const char *, uid_t);
 static ssize_t	write_data_block(struct archive_write_disk *,
 		    const char *, size_t);
 
-static struct archive_vtable *archive_write_disk_vtable(void);
+static struct archive_vtable *tk_archive_write_disk_vtable(void);
 
 static int	_archive_write_close(struct archive *);
 static int	_archive_write_finish(struct archive *);
@@ -279,30 +279,30 @@ _archive_write_disk_lazy_stat(struct archive_write_disk *a)
 		a->pst = &a->st;
 		return (ARCHIVE_OK);
 	}
-	archive_set_error(&a->archive, errno, "Couldn't stat file");
+	tk_archive_set_error(&a->archive, errno, "Couldn't stat file");
 	return (ARCHIVE_WARN);
 }
 
 static struct archive_vtable *
-archive_write_disk_vtable(void)
+tk_archive_write_disk_vtable(void)
 {
 	static struct archive_vtable av;
 	static int inited = 0;
 
 	if (!inited) {
-		av.archive_close = _archive_write_close;
-		av.archive_finish = _archive_write_finish;
-		av.archive_write_header = _archive_write_header;
-		av.archive_write_finish_entry = _archive_write_finish_entry;
-		av.archive_write_data = _archive_write_data;
-		av.archive_write_data_block = _archive_write_data_block;
+		av.tk_archive_close = _archive_write_close;
+		av.tk_archive_finish = _archive_write_finish;
+		av.tk_archive_write_header = _archive_write_header;
+		av.tk_archive_write_finish_entry = _archive_write_finish_entry;
+		av.tk_archive_write_data = _archive_write_data;
+		av.tk_archive_write_data_block = _archive_write_data_block;
 	}
 	return (&av);
 }
 
 
 int
-archive_write_disk_set_options(struct archive *_a, int flags)
+tk_archive_write_disk_set_options(struct archive *_a, int flags)
 {
 	struct archive_write_disk *a = (struct archive_write_disk *)_a;
 
@@ -332,7 +332,7 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_DISK_MAGIC,
 	    ARCHIVE_STATE_HEADER | ARCHIVE_STATE_DATA,
 	    "archive_write_disk_header");
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 	if (a->archive.state & ARCHIVE_STATE_DATA) {
 		r = _archive_write_finish_entry(&a->archive);
 		if (r == ARCHIVE_FATAL)
@@ -344,22 +344,22 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 	a->current_fixup = NULL;
 	a->deferred = 0;
 	if (a->entry) {
-		archive_entry_free(a->entry);
+		tk_archive_entry_free(a->entry);
 		a->entry = NULL;
 	}
-	a->entry = archive_entry_clone(entry);
+	a->entry = tk_archive_entry_clone(entry);
 	a->fd = -1;
 	a->fd_offset = 0;
 	a->offset = 0;
 	a->uid = a->user_uid;
-	a->mode = archive_entry_mode(a->entry);
-	if (archive_entry_size_is_set(a->entry))
-		a->filesize = archive_entry_size(a->entry);
+	a->mode = tk_archive_entry_mode(a->entry);
+	if (tk_archive_entry_size_is_set(a->entry))
+		a->filesize = tk_archive_entry_size(a->entry);
 	else
 		a->filesize = -1;
-	archive_strcpy(&(a->_name_data), archive_entry_pathname(a->entry));
+	tk_archive_strcpy(&(a->_name_data), tk_archive_entry_pathname(a->entry));
 	a->name = a->_name_data.s;
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 
 	/*
 	 * Clean up the requested path.  This is necessary for correct
@@ -456,7 +456,7 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 	if (a->restore_pwd >= 0) {
 		r = fchdir(a->restore_pwd);
 		if (r != 0) {
-			archive_set_error(&a->archive, errno, "chdir() failure");
+			tk_archive_set_error(&a->archive, errno, "chdir() failure");
 			ret = ARCHIVE_FATAL;
 		}
 		close(a->restore_pwd);
@@ -465,41 +465,41 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 #endif
 
 	/*
-	 * Fixup uses the unedited pathname from archive_entry_pathname(),
+	 * Fixup uses the unedited pathname from tk_archive_entry_pathname(),
 	 * because it is relative to the base dir and the edited path
 	 * might be relative to some intermediate dir as a result of the
 	 * deep restore logic.
 	 */
 	if (a->deferred & TODO_MODE) {
-		fe = current_fixup(a, archive_entry_pathname(entry));
+		fe = current_fixup(a, tk_archive_entry_pathname(entry));
 		fe->fixup |= TODO_MODE_BASE;
 		fe->mode = a->mode;
 	}
 
 	if ((a->deferred & TODO_TIMES)
-		&& (archive_entry_mtime_is_set(entry)
-		    || archive_entry_atime_is_set(entry))) {
-		fe = current_fixup(a, archive_entry_pathname(entry));
+		&& (tk_archive_entry_mtime_is_set(entry)
+		    || tk_archive_entry_atime_is_set(entry))) {
+		fe = current_fixup(a, tk_archive_entry_pathname(entry));
 		fe->fixup |= TODO_TIMES;
-		if (archive_entry_atime_is_set(entry)) {
-			fe->atime = archive_entry_atime(entry);
-			fe->atime_nanos = archive_entry_atime_nsec(entry);
+		if (tk_archive_entry_atime_is_set(entry)) {
+			fe->atime = tk_archive_entry_atime(entry);
+			fe->atime_nanos = tk_archive_entry_atime_nsec(entry);
 		} else {
 			/* If atime is unset, use start time. */
 			fe->atime = a->start_time;
 			fe->atime_nanos = 0;
 		}
-		if (archive_entry_mtime_is_set(entry)) {
-			fe->mtime = archive_entry_mtime(entry);
-			fe->mtime_nanos = archive_entry_mtime_nsec(entry);
+		if (tk_archive_entry_mtime_is_set(entry)) {
+			fe->mtime = tk_archive_entry_mtime(entry);
+			fe->mtime_nanos = tk_archive_entry_mtime_nsec(entry);
 		} else {
 			/* If mtime is unset, use start time. */
 			fe->mtime = a->start_time;
 			fe->mtime_nanos = 0;
 		}
-		if (archive_entry_birthtime_is_set(entry)) {
-			fe->birthtime = archive_entry_birthtime(entry);
-			fe->birthtime_nanos = archive_entry_birthtime_nsec(entry);
+		if (tk_archive_entry_birthtime_is_set(entry)) {
+			fe->birthtime = tk_archive_entry_birthtime(entry);
+			fe->birthtime_nanos = tk_archive_entry_birthtime_nsec(entry);
 		} else {
 			/* If birthtime is unset, use mtime. */
 			fe->birthtime = fe->mtime;
@@ -508,7 +508,7 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 	}
 
 	if (a->deferred & TODO_FFLAGS) {
-		fe = current_fixup(a, archive_entry_pathname(entry));
+		fe = current_fixup(a, tk_archive_entry_pathname(entry));
 		fe->fixup |= TODO_FFLAGS;
 		/* TODO: Complete this.. defer fflags from below. */
 	}
@@ -521,7 +521,7 @@ _archive_write_header(struct archive *_a, struct archive_entry *entry)
 	 * In particular, dirs, links, etc, don't get written to.
 	 */
 	if (a->fd < 0) {
-		archive_entry_set_size(entry, 0);
+		tk_archive_entry_set_size(entry, 0);
 		a->filesize = 0;
 	}
 done:
@@ -532,7 +532,7 @@ done:
 }
 
 int
-archive_write_disk_set_skip_file(struct archive *_a, dev_t d, ino_t i)
+tk_archive_write_disk_set_skip_file(struct archive *_a, dev_t d, ino_t i)
 {
 	struct archive_write_disk *a = (struct archive_write_disk *)_a;
 	__archive_check_magic(&a->archive, ARCHIVE_WRITE_DISK_MAGIC,
@@ -553,7 +553,7 @@ write_data_block(struct archive_write_disk *a, const char *buff, size_t size)
 		return (ARCHIVE_OK);
 
 	if (a->filesize == 0 || a->fd < 0) {
-		archive_set_error(&a->archive, 0,
+		tk_archive_set_error(&a->archive, 0,
 		    "Attempt to write to an empty file");
 		return (ARCHIVE_WARN);
 	}
@@ -608,7 +608,7 @@ write_data_block(struct archive_write_disk *a, const char *buff, size_t size)
 		/* Seek if necessary to the specified offset. */
 		if (a->offset != a->fd_offset) {
 			if (lseek(a->fd, a->offset, SEEK_SET) < 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Seek failed");
 				return (ARCHIVE_FATAL);
 			}
@@ -618,7 +618,7 @@ write_data_block(struct archive_write_disk *a, const char *buff, size_t size)
  		}
 		bytes_written = write(a->fd, buff, bytes_to_write);
 		if (bytes_written < 0) {
-			archive_set_error(&a->archive, errno, "Write failed");
+			tk_archive_set_error(&a->archive, errno, "Write failed");
 			return (ARCHIVE_WARN);
 		}
 		buff += bytes_written;
@@ -646,7 +646,7 @@ _archive_write_data_block(struct archive *_a,
 	if (r < ARCHIVE_OK)
 		return (r);
 	if ((size_t)r < size) {
-		archive_set_error(&a->archive, 0,
+		tk_archive_set_error(&a->archive, 0,
 		    "Write request too large");
 		return (ARCHIVE_WARN);
 	}
@@ -675,7 +675,7 @@ _archive_write_finish_entry(struct archive *_a)
 	    "archive_write_finish_entry");
 	if (a->archive.state & ARCHIVE_STATE_HEADER)
 		return (ARCHIVE_OK);
-	archive_clear_error(&a->archive);
+	tk_archive_clear_error(&a->archive);
 
 	/* Pad or truncate file to the right size. */
 	if (a->fd < 0) {
@@ -689,7 +689,7 @@ _archive_write_finish_entry(struct archive *_a)
 #if HAVE_FTRUNCATE
 		if (ftruncate(a->fd, a->filesize) == -1 &&
 		    a->filesize == 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "File size could not be restored");
 			return (ARCHIVE_FAILED);
 		}
@@ -707,12 +707,12 @@ _archive_write_finish_entry(struct archive *_a)
 		if (a->st.st_size < a->filesize) {
 			const char nul = '\0';
 			if (lseek(a->fd, a->filesize - 1, SEEK_SET) < 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Seek failed");
 				return (ARCHIVE_FATAL);
 			}
 			if (write(a->fd, &nul, 1) < 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Write to restore size failed");
 				return (ARCHIVE_FATAL);
 			}
@@ -728,15 +728,15 @@ _archive_write_finish_entry(struct archive *_a)
 	 */
 	if (a->todo & (TODO_OWNER | TODO_SUID | TODO_SGID)) {
 		a->uid = a->lookup_uid(a->lookup_uid_data,
-		    archive_entry_uname(a->entry),
-		    archive_entry_uid(a->entry));
+		    tk_archive_entry_uname(a->entry),
+		    tk_archive_entry_uid(a->entry));
 	}
 	/* Look up the "real" GID only if we're going to need it. */
 	/* TODO: the TODO_SUID condition can be dropped here, can't it? */
 	if (a->todo & (TODO_OWNER | TODO_SGID | TODO_SUID)) {
 		a->gid = a->lookup_gid(a->lookup_gid_data,
-		    archive_entry_gname(a->entry),
-		    archive_entry_gid(a->entry));
+		    tk_archive_entry_gname(a->entry),
+		    tk_archive_entry_gid(a->entry));
 	 }
 	/*
 	 * If restoring ownership, do it before trying to restore suid/sgid
@@ -788,7 +788,7 @@ _archive_write_finish_entry(struct archive *_a)
 	}
 	/* If there's an entry, we can release it now. */
 	if (a->entry) {
-		archive_entry_free(a->entry);
+		tk_archive_entry_free(a->entry);
 		a->entry = NULL;
 	}
 	a->archive.state = ARCHIVE_STATE_HEADER;
@@ -796,7 +796,7 @@ _archive_write_finish_entry(struct archive *_a)
 }
 
 int
-archive_write_disk_set_group_lookup(struct archive *_a,
+tk_archive_write_disk_set_group_lookup(struct archive *_a,
     void *private_data,
     gid_t (*lookup_gid)(void *private, const char *gname, gid_t gid),
     void (*cleanup_gid)(void *private))
@@ -812,7 +812,7 @@ archive_write_disk_set_group_lookup(struct archive *_a,
 }
 
 int
-archive_write_disk_set_user_lookup(struct archive *_a,
+tk_archive_write_disk_set_user_lookup(struct archive *_a,
     void *private_data,
     uid_t (*lookup_uid)(void *private, const char *uname, uid_t uid),
     void (*cleanup_uid)(void *private))
@@ -832,7 +832,7 @@ archive_write_disk_set_user_lookup(struct archive *_a,
  * Create a new archive_write_disk object and initialize it with global state.
  */
 struct archive *
-archive_write_disk_new(void)
+tk_archive_write_disk_new(void)
 {
 	struct archive_write_disk *a;
 
@@ -843,14 +843,14 @@ archive_write_disk_new(void)
 	a->archive.magic = ARCHIVE_WRITE_DISK_MAGIC;
 	/* We're ready to write a header immediately. */
 	a->archive.state = ARCHIVE_STATE_HEADER;
-	a->archive.vtable = archive_write_disk_vtable();
+	a->archive.vtable = tk_archive_write_disk_vtable();
 	a->lookup_uid = trivial_lookup_uid;
 	a->lookup_gid = trivial_lookup_gid;
 	a->start_time = time(NULL);
 #ifdef HAVE_GETEUID
 	a->user_uid = geteuid();
 #endif /* HAVE_GETEUID */
-	if (archive_string_ensure(&a->path_safe, 512) == NULL) {
+	if (tk_archive_string_ensure(&a->path_safe, 512) == NULL) {
 		free(a);
 		return (NULL);
 	}
@@ -936,7 +936,7 @@ restore_entry(struct archive_write_disk *a)
 			a->pst = NULL;
 		} else {
 			/* We tried, but couldn't get rid of it. */
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Could not unlink");
 			return(ARCHIVE_FAILED);
 		}
@@ -956,7 +956,7 @@ restore_entry(struct archive_write_disk *a)
 	if ((en == EISDIR || en == EEXIST)
 	    && (a->flags & ARCHIVE_EXTRACT_NO_OVERWRITE)) {
 		/* If we're not overwriting, we're done. */
-		archive_set_error(&a->archive, en, "Already exists");
+		tk_archive_set_error(&a->archive, en, "Already exists");
 		return (ARCHIVE_FAILED);
 	}
 
@@ -970,7 +970,7 @@ restore_entry(struct archive_write_disk *a)
 	if (en == EISDIR) {
 		/* A dir is in the way of a non-dir, rmdir it. */
 		if (rmdir(a->name) != 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Can't remove already-existing dir");
 			return (ARCHIVE_FAILED);
 		}
@@ -997,7 +997,7 @@ restore_entry(struct archive_write_disk *a)
 		if (r != 0 || !S_ISDIR(a->mode))
 			r = lstat(a->name, &a->st);
 		if (r != 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Can't stat existing object");
 			return (ARCHIVE_FAILED);
 		}
@@ -1008,7 +1008,7 @@ restore_entry(struct archive_write_disk *a)
 		if ((a->flags & ARCHIVE_EXTRACT_NO_OVERWRITE_NEWER)
 		    &&  !S_ISDIR(a->st.st_mode)) {
 			if (!older(&(a->st), a->entry)) {
-				archive_set_error(&a->archive, 0,
+				tk_archive_set_error(&a->archive, 0,
 				    "File on disk is not older; skipping.");
 				return (ARCHIVE_FAILED);
 			}
@@ -1019,14 +1019,14 @@ restore_entry(struct archive_write_disk *a)
 		    a->skip_file_ino > 0 &&
 		    a->st.st_dev == a->skip_file_dev &&
 		    a->st.st_ino == a->skip_file_ino) {
-			archive_set_error(&a->archive, 0, "Refusing to overwrite archive");
+			tk_archive_set_error(&a->archive, 0, "Refusing to overwrite archive");
 			return (ARCHIVE_FAILED);
 		}
 
 		if (!S_ISDIR(a->st.st_mode)) {
 			/* A non-dir is in the way, unlink it. */
 			if (unlink(a->name) != 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Can't unlink already-existing object");
 				return (ARCHIVE_FAILED);
 			}
@@ -1036,7 +1036,7 @@ restore_entry(struct archive_write_disk *a)
 		} else if (!S_ISDIR(a->mode)) {
 			/* A dir is in the way of a non-dir, rmdir it. */
 			if (rmdir(a->name) != 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Can't remove already-existing dir");
 				return (ARCHIVE_FAILED);
 			}
@@ -1060,7 +1060,7 @@ restore_entry(struct archive_write_disk *a)
 
 	if (en) {
 		/* Everything failed; give up here. */
-		archive_set_error(&a->archive, en, "Can't create '%s'",
+		tk_archive_set_error(&a->archive, en, "Can't create '%s'",
 		    a->name);
 		return (ARCHIVE_FAILED);
 	}
@@ -1084,7 +1084,7 @@ create_filesystem_object(struct archive_write_disk *a)
 
 	/* We identify hard/symlinks according to the link names. */
 	/* Since link(2) and symlink(2) don't handle modes, we're done here. */
-	linkname = archive_entry_hardlink(a->entry);
+	linkname = tk_archive_entry_hardlink(a->entry);
 	if (linkname != NULL) {
 #if !HAVE_LINK
 		return (EPERM);
@@ -1113,7 +1113,7 @@ create_filesystem_object(struct archive_write_disk *a)
 		return (r);
 #endif
 	}
-	linkname = archive_entry_symlink(a->entry);
+	linkname = tk_archive_entry_symlink(a->entry);
 	if (linkname != NULL) {
 #if HAVE_SYMLINK
 		return symlink(linkname, a->name) ? errno : 0;
@@ -1151,7 +1151,7 @@ create_filesystem_object(struct archive_write_disk *a)
 		/* Note: we use AE_IFCHR for the case label, and
 		 * S_IFCHR for the mknod() call.  This is correct.  */
 		r = mknod(a->name, mode | S_IFCHR,
-		    archive_entry_rdev(a->entry));
+		    tk_archive_entry_rdev(a->entry));
 		break;
 #else
 		/* TODO: Find a better way to warn about our inability
@@ -1161,7 +1161,7 @@ create_filesystem_object(struct archive_write_disk *a)
 	case AE_IFBLK:
 #ifdef HAVE_MKNOD
 		r = mknod(a->name, mode | S_IFBLK,
-		    archive_entry_rdev(a->entry));
+		    tk_archive_entry_rdev(a->entry));
 		break;
 #else
 		/* TODO: Find a better way to warn about our inability
@@ -1305,10 +1305,10 @@ _archive_write_finish(struct archive *_a)
 	if (a->cleanup_uid != NULL && a->lookup_uid_data != NULL)
 		(a->cleanup_uid)(a->lookup_uid_data);
 	if (a->entry)
-		archive_entry_free(a->entry);
-	archive_string_free(&a->_name_data);
-	archive_string_free(&a->archive.error_string);
-	archive_string_free(&a->path_safe);
+		tk_archive_entry_free(a->entry);
+	tk_archive_string_free(&a->_name_data);
+	tk_archive_string_free(&a->archive.error_string);
+	tk_archive_string_free(&a->path_safe);
 	free(a);
 	return (ret);
 }
@@ -1465,7 +1465,7 @@ check_symlinks(struct archive_write_disk *a)
 				 * item being extracted.
 				 */
 				if (unlink(a->name)) {
-					archive_set_error(&a->archive, errno,
+					tk_archive_set_error(&a->archive, errno,
 					    "Could not remove symlink %s",
 					    a->name);
 					pn[0] = c;
@@ -1479,7 +1479,7 @@ check_symlinks(struct archive_write_disk *a)
 				 * symlink with another symlink.
 				 */
 				if (!S_ISLNK(a->mode)) {
-					archive_set_error(&a->archive, 0,
+					tk_archive_set_error(&a->archive, 0,
 					    "Removing symlink %s",
 					    a->name);
 				}
@@ -1489,7 +1489,7 @@ check_symlinks(struct archive_write_disk *a)
 			} else if (a->flags & ARCHIVE_EXTRACT_UNLINK) {
 				/* User asked us to remove problems. */
 				if (unlink(a->name) != 0) {
-					archive_set_error(&a->archive, 0,
+					tk_archive_set_error(&a->archive, 0,
 					    "Cannot remove intervening symlink %s",
 					    a->name);
 					pn[0] = c;
@@ -1497,7 +1497,7 @@ check_symlinks(struct archive_write_disk *a)
 				}
 				a->pst = NULL;
 			} else {
-				archive_set_error(&a->archive, 0,
+				tk_archive_set_error(&a->archive, 0,
 				    "Cannot extract through symlink %s",
 				    a->name);
 				pn[0] = c;
@@ -1507,7 +1507,7 @@ check_symlinks(struct archive_write_disk *a)
 	}
 	pn[0] = c;
 	/* We've checked and/or cleaned the whole path, so remember it. */
-	archive_strcpy(&a->path_safe, a->name);
+	tk_archive_strcpy(&a->path_safe, a->name);
 	return (ARCHIVE_OK);
 #endif
 }
@@ -1577,7 +1577,7 @@ cleanup_pathname(struct archive_write_disk *a)
 
 	dest = src = a->name;
 	if (*src == '\0') {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Invalid empty pathname");
 		return (ARCHIVE_FAILED);
 	}
@@ -1610,7 +1610,7 @@ cleanup_pathname(struct archive_write_disk *a)
 				if (src[2] == '/' || src[2] == '\0') {
 					/* Conditionally warn about '..' */
 					if (a->flags & ARCHIVE_EXTRACT_SECURE_NODOTDOT) {
-						archive_set_error(&a->archive,
+						tk_archive_set_error(&a->archive,
 						    ARCHIVE_ERRNO_MISC,
 						    "Path contains '..'");
 						return (ARCHIVE_FAILED);
@@ -1723,19 +1723,19 @@ create_dir(struct archive_write_disk *a, char *path)
 		if (S_ISDIR(st.st_mode))
 			return (ARCHIVE_OK);
 		if ((a->flags & ARCHIVE_EXTRACT_NO_OVERWRITE)) {
-			archive_set_error(&a->archive, EEXIST,
+			tk_archive_set_error(&a->archive, EEXIST,
 			    "Can't create directory '%s'", path);
 			return (ARCHIVE_FAILED);
 		}
 		if (unlink(path) != 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Can't create directory '%s': "
 			    "Conflicting file cannot be removed");
 			return (ARCHIVE_FAILED);
 		}
 	} else if (errno != ENOENT && errno != ENOTDIR) {
 		/* Stat failed? */
-		archive_set_error(&a->archive, errno, "Can't test directory '%s'", path);
+		tk_archive_set_error(&a->archive, errno, "Can't test directory '%s'", path);
 		return (ARCHIVE_FAILED);
 	} else if (slash != NULL) {
 		*slash = '\0';
@@ -1776,7 +1776,7 @@ create_dir(struct archive_write_disk *a, char *path)
 	if (stat(path, &st) == 0 && S_ISDIR(st.st_mode))
 		return (ARCHIVE_OK);
 
-	archive_set_error(&a->archive, errno, "Failed to create dir '%s'",
+	tk_archive_set_error(&a->archive, errno, "Failed to create dir '%s'",
 	    path);
 	return (ARCHIVE_FAILED);
 }
@@ -1800,7 +1800,7 @@ set_ownership(struct archive_write_disk *a)
 
 	/* If we know we can't change it, don't bother trying. */
 	if (a->user_uid != 0  &&  a->user_uid != a->uid) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Can't set UID=%d", a->uid);
 		return (ARCHIVE_WARN);
 	}
@@ -1831,7 +1831,7 @@ set_ownership(struct archive_write_disk *a)
 	}
 #endif
 
-	archive_set_error(&a->archive, errno,
+	tk_archive_set_error(&a->archive, errno,
 	    "Can't set user=%d/group=%d for %s", a->uid, a->gid,
 	    a->name);
 	return (ARCHIVE_WARN);
@@ -1932,20 +1932,20 @@ set_times(struct archive_write_disk *a)
 	long atime_nsec = 0, mtime_nsec = 0;
 
 	/* If no time was provided, we're done. */
-	if (!archive_entry_atime_is_set(a->entry)
+	if (!tk_archive_entry_atime_is_set(a->entry)
 #if HAVE_STRUCT_STAT_ST_BIRTHTIME
-	    && !archive_entry_birthtime_is_set(a->entry)
+	    && !tk_archive_entry_birthtime_is_set(a->entry)
 #endif
-	    && !archive_entry_mtime_is_set(a->entry))
+	    && !tk_archive_entry_mtime_is_set(a->entry))
 		return (ARCHIVE_OK);
 
 	/* If no atime was specified, use start time instead. */
 	/* In theory, it would be marginally more correct to use
 	 * time(NULL) here, but that would cost us an extra syscall
 	 * for little gain. */
-	if (archive_entry_atime_is_set(a->entry)) {
-		atime = archive_entry_atime(a->entry);
-		atime_nsec = archive_entry_atime_nsec(a->entry);
+	if (tk_archive_entry_atime_is_set(a->entry)) {
+		atime = tk_archive_entry_atime(a->entry);
+		atime_nsec = tk_archive_entry_atime_nsec(a->entry);
 	}
 
 	/*
@@ -1956,24 +1956,24 @@ set_times(struct archive_write_disk *a)
 	 */
 #if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	/* If birthtime is set, flush that through to disk first. */
-	if (archive_entry_birthtime_is_set(a->entry))
+	if (tk_archive_entry_birthtime_is_set(a->entry))
 		if (set_time(a->fd, a->mode, a->name, atime, atime_nsec,
-			archive_entry_birthtime(a->entry),
-			archive_entry_birthtime_nsec(a->entry))) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_entry_birthtime(a->entry),
+			tk_archive_entry_birthtime_nsec(a->entry))) {
+			tk_archive_set_error(&a->archive, errno,
 			    "Can't update time for %s",
 			    a->name);
 			return (ARCHIVE_WARN);
 		}
 #endif
 
-	if (archive_entry_mtime_is_set(a->entry)) {
-		mtime = archive_entry_mtime(a->entry);
-		mtime_nsec = archive_entry_mtime_nsec(a->entry);
+	if (tk_archive_entry_mtime_is_set(a->entry)) {
+		mtime = tk_archive_entry_mtime(a->entry);
+		mtime_nsec = tk_archive_entry_mtime_nsec(a->entry);
 	}
 	if (set_time(a->fd, a->mode, a->name,
 		atime, atime_nsec, mtime, mtime_nsec)) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Can't update time for %s",
 		    a->name);
 		return (ARCHIVE_WARN);
@@ -2014,7 +2014,7 @@ set_mode(struct archive_write_disk *a, int mode)
 				 * sgid/suid, but won't consider it a
 				 * problem if we can't.
 				 */
-				archive_set_error(&a->archive, -1,
+				tk_archive_set_error(&a->archive, -1,
 				    "Can't restore SGID bit");
 				r = ARCHIVE_WARN;
 			}
@@ -2026,7 +2026,7 @@ set_mode(struct archive_write_disk *a, int mode)
 			mode &= ~ S_ISUID;
 #if !defined(_WIN32) || defined(__CYGWIN__)
 			if (a->flags & ARCHIVE_EXTRACT_OWNER) {
-				archive_set_error(&a->archive, -1,
+				tk_archive_set_error(&a->archive, -1,
 				    "Can't restore SUID bit");
 				r = ARCHIVE_WARN;
 			}
@@ -2044,7 +2044,7 @@ set_mode(struct archive_write_disk *a, int mode)
 			mode &= ~ S_ISUID;
 #if !defined(_WIN32) || defined(__CYGWIN__)
 			if (a->flags & ARCHIVE_EXTRACT_OWNER) {
-				archive_set_error(&a->archive, -1,
+				tk_archive_set_error(&a->archive, -1,
 				    "Can't make file SUID");
 				r = ARCHIVE_WARN;
 			}
@@ -2064,7 +2064,7 @@ set_mode(struct archive_write_disk *a, int mode)
 		 * impact.
 		 */
 		if (lchmod(a->name, mode) != 0) {
-			archive_set_error(&a->archive, errno,
+			tk_archive_set_error(&a->archive, errno,
 			    "Can't set permissions to 0%o", (int)mode);
 			r = ARCHIVE_WARN;
 		}
@@ -2079,7 +2079,7 @@ set_mode(struct archive_write_disk *a, int mode)
 #ifdef HAVE_FCHMOD
 		if (a->fd >= 0) {
 			if (fchmod(a->fd, mode) != 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Can't set permissions to 0%o", (int)mode);
 				r = ARCHIVE_WARN;
 			}
@@ -2088,7 +2088,7 @@ set_mode(struct archive_write_disk *a, int mode)
 			/* If this platform lacks fchmod(), then
 			 * we'll just use chmod(). */
 			if (chmod(a->name, mode) != 0) {
-				archive_set_error(&a->archive, errno,
+				tk_archive_set_error(&a->archive, errno,
 				    "Can't set permissions to 0%o", (int)mode);
 				r = ARCHIVE_WARN;
 			}
@@ -2103,7 +2103,7 @@ set_fflags(struct archive_write_disk *a)
 	unsigned long	set, clear;
 	int		r;
 	int		critical_flags;
-	mode_t		mode = archive_entry_mode(a->entry);
+	mode_t		mode = tk_archive_entry_mode(a->entry);
 
 	/*
 	 * Make 'critical_flags' hold all file flags that can't be
@@ -2142,7 +2142,7 @@ set_fflags(struct archive_write_disk *a)
 #endif
 
 	if (a->todo & TODO_FFLAGS) {
-		archive_entry_fflags(a->entry, &set, &clear);
+		tk_archive_entry_fflags(a->entry, &set, &clear);
 
 		/*
 		 * The first test encourages the compiler to eliminate
@@ -2206,14 +2206,14 @@ set_fflags_platform(struct archive_write_disk *a, int fd, const char *name,
 		return (ARCHIVE_OK);
 #elif defined(HAVE_CHFLAGS)
 	if (S_ISLNK(a->st.st_mode)) {
-		archive_set_error(&a->archive, errno,
+		tk_archive_set_error(&a->archive, errno,
 		    "Can't set file flags on symlink.");
 		return (ARCHIVE_WARN);
 	}
 	if (chflags(name, a->st.st_flags) == 0)
 		return (ARCHIVE_OK);
 #endif
-	archive_set_error(&a->archive, errno,
+	tk_archive_set_error(&a->archive, errno,
 	    "Failed to set file flags");
 	return (ARCHIVE_WARN);
 }
@@ -2279,7 +2279,7 @@ set_fflags_platform(struct archive_write_disk *a, int fd, const char *name,
 	}
 	/* We couldn't set the flags, so report the failure. */
 fail:
-	archive_set_error(&a->archive, errno,
+	tk_archive_set_error(&a->archive, errno,
 	    "Failed to set file flags");
 	ret = ARCHIVE_WARN;
 cleanup:
@@ -2354,11 +2354,11 @@ set_acl(struct archive_write_disk *a, int fd, struct archive_entry *entry,
 	const char	*name;
 
 	ret = ARCHIVE_OK;
-	entries = archive_entry_acl_reset(entry, ae_requested_type);
+	entries = tk_archive_entry_acl_reset(entry, ae_requested_type);
 	if (entries == 0)
 		return (ARCHIVE_OK);
 	acl = acl_init(entries);
-	while (archive_entry_acl_next(entry, ae_requested_type, &ae_type,
+	while (tk_archive_entry_acl_next(entry, ae_requested_type, &ae_type,
 		   &ae_permset, &ae_tag, &ae_id, &ae_name) == ARCHIVE_OK) {
 		acl_create_entry(&acl, &acl_entry);
 
@@ -2402,7 +2402,7 @@ set_acl(struct archive_write_disk *a, int fd, struct archive_entry *entry,
 			acl_add_perm(acl_permset, ACL_READ);
 	}
 
-	name = archive_entry_pathname(entry);
+	name = tk_archive_entry_pathname(entry);
 
 	/* Try restoring the ACL through 'fd' if we can. */
 #if HAVE_ACL_SET_FD
@@ -2417,7 +2417,7 @@ set_acl(struct archive_write_disk *a, int fd, struct archive_entry *entry,
 #endif
 #endif
 	if (acl_set_file(name, acl_type, acl) != 0) {
-		archive_set_error(&a->archive, errno, "Failed to set %s acl", tname);
+		tk_archive_set_error(&a->archive, errno, "Failed to set %s acl", tname);
 		ret = ARCHIVE_WARN;
 	}
 	acl_free(acl);
@@ -2435,13 +2435,13 @@ set_xattrs(struct archive_write_disk *a)
 	struct archive_entry *entry = a->entry;
 	static int warning_done = 0;
 	int ret = ARCHIVE_OK;
-	int i = archive_entry_xattr_reset(entry);
+	int i = tk_archive_entry_xattr_reset(entry);
 
 	while (i--) {
 		const char *name;
 		const void *value;
 		size_t size;
-		archive_entry_xattr_next(entry, &name, &value, &size);
+		tk_archive_entry_xattr_next(entry, &name, &value, &size);
 		if (name != NULL &&
 				strncmp(name, "xfsroot.", 8) != 0 &&
 				strncmp(name, "system.", 7) != 0) {
@@ -2452,25 +2452,25 @@ set_xattrs(struct archive_write_disk *a)
 			else
 #endif
 			{
-				e = lsetxattr(archive_entry_pathname(entry),
+				e = lsetxattr(tk_archive_entry_pathname(entry),
 				    name, value, size, 0);
 			}
 			if (e == -1) {
 				if (errno == ENOTSUP) {
 					if (!warning_done) {
 						warning_done = 1;
-						archive_set_error(&a->archive, errno,
+						tk_archive_set_error(&a->archive, errno,
 						    "Cannot restore extended "
 						    "attributes on this file "
 						    "system");
 					}
 				} else
-					archive_set_error(&a->archive, errno,
+					tk_archive_set_error(&a->archive, errno,
 					    "Failed to set extended attribute");
 				ret = ARCHIVE_WARN;
 			}
 		} else {
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
 			    "Invalid extended attribute encountered");
 			ret = ARCHIVE_WARN;
 		}
@@ -2487,13 +2487,13 @@ set_xattrs(struct archive_write_disk *a)
 	struct archive_entry *entry = a->entry;
 	static int warning_done = 0;
 	int ret = ARCHIVE_OK;
-	int i = archive_entry_xattr_reset(entry);
+	int i = tk_archive_entry_xattr_reset(entry);
 
 	while (i--) {
 		const char *name;
 		const void *value;
 		size_t size;
-		archive_entry_xattr_next(entry, &name, &value, &size);
+		tk_archive_entry_xattr_next(entry, &name, &value, &size);
 		if (name != NULL) {
 			int e;
 			int namespace;
@@ -2504,7 +2504,7 @@ set_xattrs(struct archive_write_disk *a)
 				namespace = EXTATTR_NAMESPACE_USER;
 			} else {
 				/* Warn about other extended attributes. */
-				archive_set_error(&a->archive,
+				tk_archive_set_error(&a->archive,
 				    ARCHIVE_ERRNO_FILE_FORMAT,
 				    "Can't restore extended attribute ``%s''",
 				    name);
@@ -2519,20 +2519,20 @@ set_xattrs(struct archive_write_disk *a)
 #endif
 			/* TODO: should we use extattr_set_link() instead? */
 			{
-				e = extattr_set_file(archive_entry_pathname(entry),
+				e = extattr_set_file(tk_archive_entry_pathname(entry),
 				    namespace, name, value, size);
 			}
 			if (e != (int)size) {
 				if (errno == ENOTSUP) {
 					if (!warning_done) {
 						warning_done = 1;
-						archive_set_error(&a->archive, errno,
+						tk_archive_set_error(&a->archive, errno,
 						    "Cannot restore extended "
 						    "attributes on this file "
 						    "system");
 					}
 				} else {
-					archive_set_error(&a->archive, errno,
+					tk_archive_set_error(&a->archive, errno,
 					    "Failed to set extended attribute");
 				}
 
@@ -2553,9 +2553,9 @@ set_xattrs(struct archive_write_disk *a)
 
 	/* If there aren't any extended attributes, then it's okay not
 	 * to extract them, otherwise, issue a single warning. */
-	if (archive_entry_xattr_count(a->entry) != 0 && !warning_done) {
+	if (tk_archive_entry_xattr_count(a->entry) != 0 && !warning_done) {
 		warning_done = 1;
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_FILE_FORMAT,
 		    "Cannot restore extended attributes on this system");
 		return (ARCHIVE_WARN);
 	}
@@ -2594,31 +2594,31 @@ older(struct stat *st, struct archive_entry *entry)
 {
 	/* First, test the seconds and return if we have a definite answer. */
 	/* Definitely older. */
-	if (st->st_mtime < archive_entry_mtime(entry))
+	if (st->st_mtime < tk_archive_entry_mtime(entry))
 		return (1);
 	/* Definitely younger. */
-	if (st->st_mtime > archive_entry_mtime(entry))
+	if (st->st_mtime > tk_archive_entry_mtime(entry))
 		return (0);
 	/* If this platform supports fractional seconds, try those. */
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 	/* Definitely older. */
-	if (st->st_mtimespec.tv_nsec < archive_entry_mtime_nsec(entry))
+	if (st->st_mtimespec.tv_nsec < tk_archive_entry_mtime_nsec(entry))
 		return (1);
 #elif HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
 	/* Definitely older. */
-	if (st->st_mtim.tv_nsec < archive_entry_mtime_nsec(entry))
+	if (st->st_mtim.tv_nsec < tk_archive_entry_mtime_nsec(entry))
 		return (1);
 #elif HAVE_STRUCT_STAT_ST_MTIME_N
 	/* older. */
-	if (st->st_mtime_n < archive_entry_mtime_nsec(entry))
+	if (st->st_mtime_n < tk_archive_entry_mtime_nsec(entry))
 		return (1);
 #elif HAVE_STRUCT_STAT_ST_UMTIME
 	/* older. */
-	if (st->st_umtime * 1000 < archive_entry_mtime_nsec(entry))
+	if (st->st_umtime * 1000 < tk_archive_entry_mtime_nsec(entry))
 		return (1);
 #elif HAVE_STRUCT_STAT_ST_MTIME_USEC
 	/* older. */
-	if (st->st_mtime_usec * 1000 < archive_entry_mtime_nsec(entry))
+	if (st->st_mtime_usec * 1000 < tk_archive_entry_mtime_nsec(entry))
 		return (1);
 #else
 	/* This system doesn't have high-res timestamps. */

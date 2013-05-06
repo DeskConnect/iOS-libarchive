@@ -45,53 +45,53 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_util.c 201098 2009-12-28 02:58:1
 /* These disappear in libarchive 3.0 */
 /* Deprecated. */
 int
-archive_api_feature(void)
+tk_archive_api_feature(void)
 {
 	return (ARCHIVE_API_FEATURE);
 }
 
 /* Deprecated. */
 int
-archive_api_version(void)
+tk_archive_api_version(void)
 {
 	return (ARCHIVE_API_VERSION);
 }
 
-/* Deprecated synonym for archive_version_number() */
+/* Deprecated synonym for tk_archive_version_number() */
 int
-archive_version_stamp(void)
+tk_archive_version_stamp(void)
 {
-	return (archive_version_number());
+	return (tk_archive_version_number());
 }
 
-/* Deprecated synonym for archive_version_string() */
+/* Deprecated synonym for tk_archive_version_string() */
 const char *
-archive_version(void)
+tk_archive_version(void)
 {
-	return (archive_version_string());
+	return (tk_archive_version_string());
 }
 #endif
 
 int
-archive_version_number(void)
+tk_archive_version_number(void)
 {
 	return (ARCHIVE_VERSION_NUMBER);
 }
 
 const char *
-archive_version_string(void)
+tk_archive_version_string(void)
 {
 	return (ARCHIVE_VERSION_STRING);
 }
 
 int
-archive_errno(struct archive *a)
+tk_archive_errno(struct archive *a)
 {
 	return (a->archive_error_number);
 }
 
 const char *
-archive_error_string(struct archive *a)
+tk_archive_error_string(struct archive *a)
 {
 
 	if (a->error != NULL  &&  *a->error != '\0')
@@ -101,32 +101,32 @@ archive_error_string(struct archive *a)
 }
 
 int
-archive_file_count(struct archive *a)
+tk_archive_file_count(struct archive *a)
 {
 	return (a->file_count);
 }
 
 int
-archive_format(struct archive *a)
+tk_archive_format(struct archive *a)
 {
 	return (a->archive_format);
 }
 
 const char *
-archive_format_name(struct archive *a)
+tk_archive_format_name(struct archive *a)
 {
 	return (a->archive_format_name);
 }
 
 
 int
-archive_compression(struct archive *a)
+tk_archive_compression(struct archive *a)
 {
 	return (a->compression_code);
 }
 
 const char *
-archive_compression_name(struct archive *a)
+tk_archive_compression_name(struct archive *a)
 {
 	return (a->compression_name);
 }
@@ -136,7 +136,7 @@ archive_compression_name(struct archive *a)
  * Return a count of the number of compressed bytes processed.
  */
 int64_t
-archive_position_compressed(struct archive *a)
+tk_archive_position_compressed(struct archive *a)
 {
 	return (a->raw_position);
 }
@@ -145,20 +145,20 @@ archive_position_compressed(struct archive *a)
  * Return a count of the number of uncompressed bytes processed.
  */
 int64_t
-archive_position_uncompressed(struct archive *a)
+tk_archive_position_uncompressed(struct archive *a)
 {
 	return (a->file_position);
 }
 
 void
-archive_clear_error(struct archive *a)
+tk_archive_clear_error(struct archive *a)
 {
-	archive_string_empty(&a->error_string);
+	tk_archive_string_empty(&a->error_string);
 	a->error = NULL;
 }
 
 void
-archive_set_error(struct archive *a, int error_number, const char *fmt, ...)
+tk_archive_set_error(struct archive *a, int error_number, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -169,17 +169,17 @@ archive_set_error(struct archive *a, int error_number, const char *fmt, ...)
 	}
 
 	va_start(ap, fmt);
-	archive_string_vsprintf(&(a->error_string), fmt, ap);
+	tk_archive_string_vsprintf(&(a->error_string), fmt, ap);
 	va_end(ap);
 	a->error = a->error_string.s;
 }
 
 void
-archive_copy_error(struct archive *dest, struct archive *src)
+tk_archive_copy_error(struct archive *dest, struct archive *src)
 {
 	dest->archive_error_number = src->archive_error_number;
 
-	archive_string_copy(&dest->error_string, &src->error_string);
+	tk_archive_string_copy(&dest->error_string, &src->error_string);
 	dest->error = dest->error_string.s;
 }
 

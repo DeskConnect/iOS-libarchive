@@ -42,12 +42,12 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_format_cpio.c 201170 2
 #include "archive_private.h"
 #include "archive_write_private.h"
 
-static ssize_t	archive_write_cpio_data(struct archive_write *,
+static ssize_t	tk_archive_write_cpio_data(struct archive_write *,
 		    const void *buff, size_t s);
-static int	archive_write_cpio_finish(struct archive_write *);
-static int	archive_write_cpio_destroy(struct archive_write *);
-static int	archive_write_cpio_finish_entry(struct archive_write *);
-static int	archive_write_cpio_header(struct archive_write *,
+static int	tk_archive_write_cpio_finish(struct archive_write *);
+static int	tk_archive_write_cpio_destroy(struct archive_write *);
+static int	tk_archive_write_cpio_finish_entry(struct archive_write *);
+static int	tk_archive_write_cpio_header(struct archive_write *,
 		    struct archive_entry *);
 static int	format_octal(int64_t, void *, int);
 static int64_t	format_octal_recursive(int64_t, char *, int);
@@ -80,7 +80,7 @@ struct cpio_header {
  * Set output format to 'cpio' format.
  */
 int
-archive_write_set_format_cpio(struct archive *_a)
+tk_archive_write_set_format_cpio(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
 	struct cpio *cpio;
@@ -91,7 +91,7 @@ archive_write_set_format_cpio(struct archive *_a)
 
 	cpio = (struct cpio *)malloc(sizeof(*cpio));
 	if (cpio == NULL) {
-		archive_set_error(&a->archive, ENOMEM, "Can't allocate cpio data");
+		tk_archive_set_error(&a->archive, ENOMEM, "Can't allocate cpio data");
 		return (ARCHIVE_FATAL);
 	}
 	memset(cpio, 0, sizeof(*cpio));
@@ -99,11 +99,11 @@ archive_write_set_format_cpio(struct archive *_a)
 
 	a->pad_uncompressed = 1;
 	a->format_name = "cpio";
-	a->format_write_header = archive_write_cpio_header;
-	a->format_write_data = archive_write_cpio_data;
-	a->format_finish_entry = archive_write_cpio_finish_entry;
-	a->format_finish = archive_write_cpio_finish;
-	a->format_destroy = archive_write_cpio_destroy;
+	a->format_write_header = tk_archive_write_cpio_header;
+	a->format_write_data = tk_archive_write_cpio_data;
+	a->format_finish_entry = tk_archive_write_cpio_finish_entry;
+	a->format_finish = tk_archive_write_cpio_finish;
+	a->format_destroy = tk_archive_write_cpio_destroy;
 	a->archive.archive_format = ARCHIVE_FORMAT_CPIO_POSIX;
 	a->archive.archive_format_name = "POSIX cpio";
 	return (ARCHIVE_OK);
@@ -126,7 +126,7 @@ archive_write_set_format_cpio(struct archive *_a)
 static int
 synthesize_ino_value(struct cpio *cpio, struct archive_entry *entry)
 {
-	int64_t ino = archive_entry_ino64(entry);
+	int64_t ino = tk_archive_entry_ino64(entry);
 	int ino_new;
 	size_t i;
 
@@ -140,7 +140,7 @@ synthesize_ino_value(struct cpio *cpio, struct archive_entry *entry)
 		return (0);
 
 	/* Don't store a mapping if we don't need to. */
-	if (archive_entry_nlink(entry) < 2) {
+	if (tk_archive_entry_nlink(entry) < 2) {
 		return ++cpio->ino_next;
 	}
 
@@ -175,7 +175,7 @@ synthesize_ino_value(struct cpio *cpio, struct archive_entry *entry)
 }
 
 static int
-archive_write_cpio_header(struct archive_write *a, struct archive_entry *entry)
+tk_archive_write_cpio_header(struct archive_write *a, struct archive_entry *entry)
 {
 	struct cpio *cpio;
 	const char *p, *path;
@@ -186,47 +186,47 @@ archive_write_cpio_header(struct archive_write *a, struct archive_entry *entry)
 	cpio = (struct cpio *)a->format_data;
 	ret2 = ARCHIVE_OK;
 
-	path = archive_entry_pathname(entry);
+	path = tk_archive_entry_pathname(entry);
 	pathlength = (int)strlen(path) + 1; /* Include trailing null. */
 
 	memset(&h, 0, sizeof(h));
 	format_octal(070707, &h.c_magic, sizeof(h.c_magic));
-	format_octal(archive_entry_dev(entry), &h.c_dev, sizeof(h.c_dev));
+	format_octal(tk_archive_entry_dev(entry), &h.c_dev, sizeof(h.c_dev));
 
 	ino = synthesize_ino_value(cpio, entry);
 	if (ino < 0) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "No memory for ino translation table");
 		return (ARCHIVE_FATAL);
 	} else if (ino > 0777777) {
-		archive_set_error(&a->archive, ERANGE,
+		tk_archive_set_error(&a->archive, ERANGE,
 		    "Too many files for this cpio format");
 		return (ARCHIVE_FATAL);
 	}
 	format_octal(ino & 0777777, &h.c_ino, sizeof(h.c_ino));
 
-	format_octal(archive_entry_mode(entry), &h.c_mode, sizeof(h.c_mode));
-	format_octal(archive_entry_uid(entry), &h.c_uid, sizeof(h.c_uid));
-	format_octal(archive_entry_gid(entry), &h.c_gid, sizeof(h.c_gid));
-	format_octal(archive_entry_nlink(entry), &h.c_nlink, sizeof(h.c_nlink));
-	if (archive_entry_filetype(entry) == AE_IFBLK
-	    || archive_entry_filetype(entry) == AE_IFCHR)
-	    format_octal(archive_entry_dev(entry), &h.c_rdev, sizeof(h.c_rdev));
+	format_octal(tk_archive_entry_mode(entry), &h.c_mode, sizeof(h.c_mode));
+	format_octal(tk_archive_entry_uid(entry), &h.c_uid, sizeof(h.c_uid));
+	format_octal(tk_archive_entry_gid(entry), &h.c_gid, sizeof(h.c_gid));
+	format_octal(tk_archive_entry_nlink(entry), &h.c_nlink, sizeof(h.c_nlink));
+	if (tk_archive_entry_filetype(entry) == AE_IFBLK
+	    || tk_archive_entry_filetype(entry) == AE_IFCHR)
+	    format_octal(tk_archive_entry_dev(entry), &h.c_rdev, sizeof(h.c_rdev));
 	else
 	    format_octal(0, &h.c_rdev, sizeof(h.c_rdev));
-	format_octal(archive_entry_mtime(entry), &h.c_mtime, sizeof(h.c_mtime));
+	format_octal(tk_archive_entry_mtime(entry), &h.c_mtime, sizeof(h.c_mtime));
 	format_octal(pathlength, &h.c_namesize, sizeof(h.c_namesize));
 
 	/* Non-regular files don't store bodies. */
-	if (archive_entry_filetype(entry) != AE_IFREG)
-		archive_entry_set_size(entry, 0);
+	if (tk_archive_entry_filetype(entry) != AE_IFREG)
+		tk_archive_entry_set_size(entry, 0);
 
 	/* Symlinks get the link written as the body of the entry. */
-	p = archive_entry_symlink(entry);
+	p = tk_archive_entry_symlink(entry);
 	if (p != NULL  &&  *p != '\0')
 		format_octal(strlen(p), &h.c_filesize, sizeof(h.c_filesize));
 	else
-		format_octal(archive_entry_size(entry),
+		format_octal(tk_archive_entry_size(entry),
 		    &h.c_filesize, sizeof(h.c_filesize));
 
 	ret = (a->compressor.write)(a, &h, sizeof(h));
@@ -237,7 +237,7 @@ archive_write_cpio_header(struct archive_write *a, struct archive_entry *entry)
 	if (ret != ARCHIVE_OK)
 		return (ARCHIVE_FATAL);
 
-	cpio->entry_bytes_remaining = archive_entry_size(entry);
+	cpio->entry_bytes_remaining = tk_archive_entry_size(entry);
 
 	/* Write the symlink now. */
 	if (p != NULL  &&  *p != '\0')
@@ -249,7 +249,7 @@ archive_write_cpio_header(struct archive_write *a, struct archive_entry *entry)
 }
 
 static ssize_t
-archive_write_cpio_data(struct archive_write *a, const void *buff, size_t s)
+tk_archive_write_cpio_data(struct archive_write *a, const void *buff, size_t s)
 {
 	struct cpio *cpio;
 	int ret;
@@ -297,22 +297,22 @@ format_octal_recursive(int64_t v, char *p, int s)
 }
 
 static int
-archive_write_cpio_finish(struct archive_write *a)
+tk_archive_write_cpio_finish(struct archive_write *a)
 {
 	int er;
 	struct archive_entry *trailer;
 
-	trailer = archive_entry_new();
+	trailer = tk_archive_entry_new();
 	/* nlink = 1 here for GNU cpio compat. */
-	archive_entry_set_nlink(trailer, 1);
-	archive_entry_set_pathname(trailer, "TRAILER!!!");
-	er = archive_write_cpio_header(a, trailer);
-	archive_entry_free(trailer);
+	tk_archive_entry_set_nlink(trailer, 1);
+	tk_archive_entry_set_pathname(trailer, "TRAILER!!!");
+	er = tk_archive_write_cpio_header(a, trailer);
+	tk_archive_entry_free(trailer);
 	return (er);
 }
 
 static int
-archive_write_cpio_destroy(struct archive_write *a)
+tk_archive_write_cpio_destroy(struct archive_write *a)
 {
 	struct cpio *cpio;
 
@@ -324,7 +324,7 @@ archive_write_cpio_destroy(struct archive_write *a)
 }
 
 static int
-archive_write_cpio_finish_entry(struct archive_write *a)
+tk_archive_write_cpio_finish_entry(struct archive_write *a)
 {
 	struct cpio *cpio;
 	size_t to_write;

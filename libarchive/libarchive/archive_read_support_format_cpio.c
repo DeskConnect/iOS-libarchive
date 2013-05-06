@@ -111,11 +111,11 @@ struct cpio {
 
 static int64_t	atol16(const char *, unsigned);
 static int64_t	atol8(const char *, unsigned);
-static int	archive_read_format_cpio_bid(struct archive_read *);
-static int	archive_read_format_cpio_cleanup(struct archive_read *);
-static int	archive_read_format_cpio_read_data(struct archive_read *,
+static int	tk_archive_read_format_cpio_bid(struct archive_read *);
+static int	tk_archive_read_format_cpio_cleanup(struct archive_read *);
+static int	tk_archive_read_format_cpio_read_data(struct archive_read *,
 		    const void **, size_t *, off_t *);
-static int	archive_read_format_cpio_read_header(struct archive_read *,
+static int	tk_archive_read_format_cpio_read_header(struct archive_read *,
 		    struct archive_entry *);
 static int	be4(const unsigned char *);
 static int	find_odc_header(struct archive_read *);
@@ -134,7 +134,7 @@ static int	le4(const unsigned char *);
 static void	record_hardlink(struct cpio *cpio, struct archive_entry *entry);
 
 int
-archive_read_support_format_cpio(struct archive *_a)
+tk_archive_read_support_format_cpio(struct archive *_a)
 {
 	struct archive_read *a = (struct archive_read *)_a;
 	struct cpio *cpio;
@@ -142,7 +142,7 @@ archive_read_support_format_cpio(struct archive *_a)
 
 	cpio = (struct cpio *)malloc(sizeof(*cpio));
 	if (cpio == NULL) {
-		archive_set_error(&a->archive, ENOMEM, "Can't allocate cpio data");
+		tk_archive_set_error(&a->archive, ENOMEM, "Can't allocate cpio data");
 		return (ARCHIVE_FATAL);
 	}
 	memset(cpio, 0, sizeof(*cpio));
@@ -151,12 +151,12 @@ archive_read_support_format_cpio(struct archive *_a)
 	r = __archive_read_register_format(a,
 	    cpio,
 	    "cpio",
-	    archive_read_format_cpio_bid,
+	    tk_archive_read_format_cpio_bid,
 	    NULL,
-	    archive_read_format_cpio_read_header,
-	    archive_read_format_cpio_read_data,
+	    tk_archive_read_format_cpio_read_header,
+	    tk_archive_read_format_cpio_read_data,
 	    NULL,
-	    archive_read_format_cpio_cleanup);
+	    tk_archive_read_format_cpio_cleanup);
 
 	if (r != ARCHIVE_OK)
 		free(cpio);
@@ -165,7 +165,7 @@ archive_read_support_format_cpio(struct archive *_a)
 
 
 static int
-archive_read_format_cpio_bid(struct archive_read *a)
+tk_archive_read_format_cpio_bid(struct archive_read *a)
 {
 	const void *h;
 	const unsigned char *p;
@@ -221,7 +221,7 @@ archive_read_format_cpio_bid(struct archive_read *a)
 }
 
 static int
-archive_read_format_cpio_read_header(struct archive_read *a,
+tk_archive_read_format_cpio_read_header(struct archive_read *a,
     struct archive_entry *entry)
 {
 	struct cpio *cpio;
@@ -241,19 +241,19 @@ archive_read_format_cpio_read_header(struct archive_read *a,
 	if (h == NULL)
 	    return (ARCHIVE_FATAL);
 	__archive_read_consume(a, namelength + name_pad);
-	archive_strncpy(&cpio->entry_name, (const char *)h, namelength);
-	archive_entry_set_pathname(entry, cpio->entry_name.s);
+	tk_archive_strncpy(&cpio->entry_name, (const char *)h, namelength);
+	tk_archive_entry_set_pathname(entry, cpio->entry_name.s);
 	cpio->entry_offset = 0;
 
 	/* If this is a symlink, read the link contents. */
-	if (archive_entry_filetype(entry) == AE_IFLNK) {
+	if (tk_archive_entry_filetype(entry) == AE_IFLNK) {
 		h = __archive_read_ahead(a, cpio->entry_bytes_remaining, NULL);
 		if (h == NULL)
 			return (ARCHIVE_FATAL);
 		__archive_read_consume(a, cpio->entry_bytes_remaining);
-		archive_strncpy(&cpio->entry_linkname, (const char *)h,
+		tk_archive_strncpy(&cpio->entry_linkname, (const char *)h,
 		    cpio->entry_bytes_remaining);
-		archive_entry_set_symlink(entry, cpio->entry_linkname.s);
+		tk_archive_entry_set_symlink(entry, cpio->entry_linkname.s);
 		cpio->entry_bytes_remaining = 0;
 	}
 
@@ -265,7 +265,7 @@ archive_read_format_cpio_read_header(struct archive_read *a,
 	/* Compare name to "TRAILER!!!" to test for end-of-archive. */
 	if (namelength == 11 && strcmp((const char *)h, "TRAILER!!!") == 0) {
 	    /* TODO: Store file location of start of block. */
-	    archive_set_error(&a->archive, 0, NULL);
+	    tk_archive_set_error(&a->archive, 0, NULL);
 	    return (ARCHIVE_EOF);
 	}
 
@@ -276,7 +276,7 @@ archive_read_format_cpio_read_header(struct archive_read *a,
 }
 
 static int
-archive_read_format_cpio_read_data(struct archive_read *a,
+tk_archive_read_format_cpio_read_data(struct archive_read *a,
     const void **buff, size_t *size, off_t *offset)
 {
 	ssize_t bytes_read;
@@ -366,7 +366,7 @@ find_newc_header(struct archive_read *a)
 					__archive_read_consume(a, skip);
 					skipped += skip;
 					if (skipped > 0) {
-						archive_set_error(&a->archive,
+						tk_archive_set_error(&a->archive,
 						    0,
 						    "Skipped %d bytes before "
 						    "finding valid header",
@@ -422,16 +422,16 @@ header_newc(struct archive_read *a, struct cpio *cpio,
 		/* TODO: Abort here? */
 	}
 
-	archive_entry_set_devmajor(entry, atol16(header->c_devmajor, sizeof(header->c_devmajor)));
-	archive_entry_set_devminor(entry, atol16(header->c_devminor, sizeof(header->c_devminor)));
-	archive_entry_set_ino(entry, atol16(header->c_ino, sizeof(header->c_ino)));
-	archive_entry_set_mode(entry, atol16(header->c_mode, sizeof(header->c_mode)));
-	archive_entry_set_uid(entry, atol16(header->c_uid, sizeof(header->c_uid)));
-	archive_entry_set_gid(entry, atol16(header->c_gid, sizeof(header->c_gid)));
-	archive_entry_set_nlink(entry, atol16(header->c_nlink, sizeof(header->c_nlink)));
-	archive_entry_set_rdevmajor(entry, atol16(header->c_rdevmajor, sizeof(header->c_rdevmajor)));
-	archive_entry_set_rdevminor(entry, atol16(header->c_rdevminor, sizeof(header->c_rdevminor)));
-	archive_entry_set_mtime(entry, atol16(header->c_mtime, sizeof(header->c_mtime)), 0);
+	tk_archive_entry_set_devmajor(entry, atol16(header->c_devmajor, sizeof(header->c_devmajor)));
+	tk_archive_entry_set_devminor(entry, atol16(header->c_devminor, sizeof(header->c_devminor)));
+	tk_archive_entry_set_ino(entry, atol16(header->c_ino, sizeof(header->c_ino)));
+	tk_archive_entry_set_mode(entry, atol16(header->c_mode, sizeof(header->c_mode)));
+	tk_archive_entry_set_uid(entry, atol16(header->c_uid, sizeof(header->c_uid)));
+	tk_archive_entry_set_gid(entry, atol16(header->c_gid, sizeof(header->c_gid)));
+	tk_archive_entry_set_nlink(entry, atol16(header->c_nlink, sizeof(header->c_nlink)));
+	tk_archive_entry_set_rdevmajor(entry, atol16(header->c_rdevmajor, sizeof(header->c_rdevmajor)));
+	tk_archive_entry_set_rdevminor(entry, atol16(header->c_rdevminor, sizeof(header->c_rdevminor)));
+	tk_archive_entry_set_mtime(entry, atol16(header->c_mtime, sizeof(header->c_mtime)), 0);
 	*namelength = atol16(header->c_namesize, sizeof(header->c_namesize));
 	/* Pad name to 2 more than a multiple of 4. */
 	*name_pad = (2 - *namelength) & 3;
@@ -443,7 +443,7 @@ header_newc(struct archive_read *a, struct cpio *cpio,
 	 */
 	cpio->entry_bytes_remaining =
 	    atol16(header->c_filesize, sizeof(header->c_filesize));
-	archive_entry_set_size(entry, cpio->entry_bytes_remaining);
+	tk_archive_entry_set_size(entry, cpio->entry_bytes_remaining);
 	/* Pad file contents to a multiple of 4. */
 	cpio->entry_padding = 3 & -cpio->entry_bytes_remaining;
 	return (r);
@@ -499,7 +499,7 @@ find_odc_header(struct archive_read *a)
 					__archive_read_consume(a, skip);
 					skipped += skip;
 					if (skipped > 0) {
-						archive_set_error(&a->archive,
+						tk_archive_set_error(&a->archive,
 						    0,
 						    "Skipped %d bytes before "
 						    "finding valid header",
@@ -549,14 +549,14 @@ header_odc(struct archive_read *a, struct cpio *cpio,
 	/* Parse out octal fields. */
 	header = (const struct cpio_odc_header *)h;
 
-	archive_entry_set_dev(entry, atol8(header->c_dev, sizeof(header->c_dev)));
-	archive_entry_set_ino(entry, atol8(header->c_ino, sizeof(header->c_ino)));
-	archive_entry_set_mode(entry, atol8(header->c_mode, sizeof(header->c_mode)));
-	archive_entry_set_uid(entry, atol8(header->c_uid, sizeof(header->c_uid)));
-	archive_entry_set_gid(entry, atol8(header->c_gid, sizeof(header->c_gid)));
-	archive_entry_set_nlink(entry, atol8(header->c_nlink, sizeof(header->c_nlink)));
-	archive_entry_set_rdev(entry, atol8(header->c_rdev, sizeof(header->c_rdev)));
-	archive_entry_set_mtime(entry, atol8(header->c_mtime, sizeof(header->c_mtime)), 0);
+	tk_archive_entry_set_dev(entry, atol8(header->c_dev, sizeof(header->c_dev)));
+	tk_archive_entry_set_ino(entry, atol8(header->c_ino, sizeof(header->c_ino)));
+	tk_archive_entry_set_mode(entry, atol8(header->c_mode, sizeof(header->c_mode)));
+	tk_archive_entry_set_uid(entry, atol8(header->c_uid, sizeof(header->c_uid)));
+	tk_archive_entry_set_gid(entry, atol8(header->c_gid, sizeof(header->c_gid)));
+	tk_archive_entry_set_nlink(entry, atol8(header->c_nlink, sizeof(header->c_nlink)));
+	tk_archive_entry_set_rdev(entry, atol8(header->c_rdev, sizeof(header->c_rdev)));
+	tk_archive_entry_set_mtime(entry, atol8(header->c_mtime, sizeof(header->c_mtime)), 0);
 	*namelength = atol8(header->c_namesize, sizeof(header->c_namesize));
 	*name_pad = 0; /* No padding of filename. */
 
@@ -567,7 +567,7 @@ header_odc(struct archive_read *a, struct cpio *cpio,
 	 */
 	cpio->entry_bytes_remaining =
 	    atol8(header->c_filesize, sizeof(header->c_filesize));
-	archive_entry_set_size(entry, cpio->entry_bytes_remaining);
+	tk_archive_entry_set_size(entry, cpio->entry_bytes_remaining);
 	cpio->entry_padding = 0;
 	return (r);
 }
@@ -591,19 +591,19 @@ header_bin_le(struct archive_read *a, struct cpio *cpio,
 	/* Parse out binary fields. */
 	header = (const struct cpio_bin_header *)h;
 
-	archive_entry_set_dev(entry, header->c_dev[0] + header->c_dev[1] * 256);
-	archive_entry_set_ino(entry, header->c_ino[0] + header->c_ino[1] * 256);
-	archive_entry_set_mode(entry, header->c_mode[0] + header->c_mode[1] * 256);
-	archive_entry_set_uid(entry, header->c_uid[0] + header->c_uid[1] * 256);
-	archive_entry_set_gid(entry, header->c_gid[0] + header->c_gid[1] * 256);
-	archive_entry_set_nlink(entry, header->c_nlink[0] + header->c_nlink[1] * 256);
-	archive_entry_set_rdev(entry, header->c_rdev[0] + header->c_rdev[1] * 256);
-	archive_entry_set_mtime(entry, le4(header->c_mtime), 0);
+	tk_archive_entry_set_dev(entry, header->c_dev[0] + header->c_dev[1] * 256);
+	tk_archive_entry_set_ino(entry, header->c_ino[0] + header->c_ino[1] * 256);
+	tk_archive_entry_set_mode(entry, header->c_mode[0] + header->c_mode[1] * 256);
+	tk_archive_entry_set_uid(entry, header->c_uid[0] + header->c_uid[1] * 256);
+	tk_archive_entry_set_gid(entry, header->c_gid[0] + header->c_gid[1] * 256);
+	tk_archive_entry_set_nlink(entry, header->c_nlink[0] + header->c_nlink[1] * 256);
+	tk_archive_entry_set_rdev(entry, header->c_rdev[0] + header->c_rdev[1] * 256);
+	tk_archive_entry_set_mtime(entry, le4(header->c_mtime), 0);
 	*namelength = header->c_namesize[0] + header->c_namesize[1] * 256;
 	*name_pad = *namelength & 1; /* Pad to even. */
 
 	cpio->entry_bytes_remaining = le4(header->c_filesize);
-	archive_entry_set_size(entry, cpio->entry_bytes_remaining);
+	tk_archive_entry_set_size(entry, cpio->entry_bytes_remaining);
 	cpio->entry_padding = cpio->entry_bytes_remaining & 1; /* Pad to even. */
 	return (ARCHIVE_OK);
 }
@@ -626,25 +626,25 @@ header_bin_be(struct archive_read *a, struct cpio *cpio,
 
 	/* Parse out binary fields. */
 	header = (const struct cpio_bin_header *)h;
-	archive_entry_set_dev(entry, header->c_dev[0] * 256 + header->c_dev[1]);
-	archive_entry_set_ino(entry, header->c_ino[0] * 256 + header->c_ino[1]);
-	archive_entry_set_mode(entry, header->c_mode[0] * 256 + header->c_mode[1]);
-	archive_entry_set_uid(entry, header->c_uid[0] * 256 + header->c_uid[1]);
-	archive_entry_set_gid(entry, header->c_gid[0] * 256 + header->c_gid[1]);
-	archive_entry_set_nlink(entry, header->c_nlink[0] * 256 + header->c_nlink[1]);
-	archive_entry_set_rdev(entry, header->c_rdev[0] * 256 + header->c_rdev[1]);
-	archive_entry_set_mtime(entry, be4(header->c_mtime), 0);
+	tk_archive_entry_set_dev(entry, header->c_dev[0] * 256 + header->c_dev[1]);
+	tk_archive_entry_set_ino(entry, header->c_ino[0] * 256 + header->c_ino[1]);
+	tk_archive_entry_set_mode(entry, header->c_mode[0] * 256 + header->c_mode[1]);
+	tk_archive_entry_set_uid(entry, header->c_uid[0] * 256 + header->c_uid[1]);
+	tk_archive_entry_set_gid(entry, header->c_gid[0] * 256 + header->c_gid[1]);
+	tk_archive_entry_set_nlink(entry, header->c_nlink[0] * 256 + header->c_nlink[1]);
+	tk_archive_entry_set_rdev(entry, header->c_rdev[0] * 256 + header->c_rdev[1]);
+	tk_archive_entry_set_mtime(entry, be4(header->c_mtime), 0);
 	*namelength = header->c_namesize[0] * 256 + header->c_namesize[1];
 	*name_pad = *namelength & 1; /* Pad to even. */
 
 	cpio->entry_bytes_remaining = be4(header->c_filesize);
-	archive_entry_set_size(entry, cpio->entry_bytes_remaining);
+	tk_archive_entry_set_size(entry, cpio->entry_bytes_remaining);
 	cpio->entry_padding = cpio->entry_bytes_remaining & 1; /* Pad to even. */
 	return (ARCHIVE_OK);
 }
 
 static int
-archive_read_format_cpio_cleanup(struct archive_read *a)
+tk_archive_read_format_cpio_cleanup(struct archive_read *a)
 {
 	struct cpio *cpio;
 
@@ -658,7 +658,7 @@ archive_read_format_cpio_cleanup(struct archive_read *a)
                 free(cpio->links_head);
                 cpio->links_head = lp;
         }
-	archive_string_free(&cpio->entry_name);
+	tk_archive_string_free(&cpio->entry_name);
 	free(cpio);
 	(a->format->data) = NULL;
 	return (ARCHIVE_OK);
@@ -731,11 +731,11 @@ record_hardlink(struct cpio *cpio, struct archive_entry *entry)
 	dev_t dev;
 	int64_t ino;
 
-	if (archive_entry_nlink(entry) <= 1)
+	if (tk_archive_entry_nlink(entry) <= 1)
 		return;
 
-	dev = archive_entry_dev(entry);
-	ino = archive_entry_ino64(entry);
+	dev = tk_archive_entry_dev(entry);
+	ino = tk_archive_entry_ino64(entry);
 
 	/*
 	 * First look in the list of multiply-linked files.  If we've
@@ -743,7 +743,7 @@ record_hardlink(struct cpio *cpio, struct archive_entry *entry)
 	 */
 	for (le = cpio->links_head; le; le = le->next) {
 		if (le->dev == dev && le->ino == ino) {
-			archive_entry_copy_hardlink(entry, le->name);
+			tk_archive_entry_copy_hardlink(entry, le->name);
 
 			if (--le->links <= 0) {
 				if (le->previous != NULL)
@@ -770,8 +770,8 @@ record_hardlink(struct cpio *cpio, struct archive_entry *entry)
 	cpio->links_head = le;
 	le->dev = dev;
 	le->ino = ino;
-	le->links = archive_entry_nlink(entry) - 1;
-	le->name = strdup(archive_entry_pathname(entry));
+	le->links = tk_archive_entry_nlink(entry) - 1;
+	le->name = strdup(tk_archive_entry_pathname(entry));
 	if (le->name == NULL)
 		__archive_errx(1, "Out of memory adding file to list");
 }

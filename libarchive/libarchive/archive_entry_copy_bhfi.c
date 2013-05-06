@@ -51,24 +51,24 @@ fileTimeToUtc(const FILETIME *filetime, time_t *time, long *ns)
 }
 
 void
-archive_entry_copy_bhfi(struct archive_entry *entry,
+tk_archive_entry_copy_bhfi(struct archive_entry *entry,
 			BY_HANDLE_FILE_INFORMATION *bhfi)
 {
 	time_t secs;
 	long nsecs;
 
 	fileTimeToUtc(&bhfi->ftLastAccessTime, &secs, &nsecs);
-	archive_entry_set_atime(entry, secs, nsecs);
+	tk_archive_entry_set_atime(entry, secs, nsecs);
 	fileTimeToUtc(&bhfi->ftLastWriteTime, &secs, &nsecs);
-	archive_entry_set_mtime(entry, secs, nsecs);
+	tk_archive_entry_set_mtime(entry, secs, nsecs);
 	fileTimeToUtc(&bhfi->ftCreationTime, &secs, &nsecs);
-	archive_entry_set_birthtime(entry, secs, nsecs);
-	archive_entry_set_dev(entry, bhfi->dwVolumeSerialNumber);
-	archive_entry_set_ino64(entry, (((int64_t)bhfi->nFileIndexHigh) << 32)
+	tk_archive_entry_set_birthtime(entry, secs, nsecs);
+	tk_archive_entry_set_dev(entry, bhfi->dwVolumeSerialNumber);
+	tk_archive_entry_set_ino64(entry, (((int64_t)bhfi->nFileIndexHigh) << 32)
 		+ bhfi->nFileIndexLow);
-	archive_entry_set_nlink(entry, bhfi->nNumberOfLinks);
-	archive_entry_set_size(entry, (((int64_t)bhfi->nFileSizeHigh) << 32)
+	tk_archive_entry_set_nlink(entry, bhfi->nNumberOfLinks);
+	tk_archive_entry_set_size(entry, (((int64_t)bhfi->nFileSizeHigh) << 32)
 		+ bhfi->nFileSizeLow);
-//	archive_entry_set_mode(entry, st->st_mode);
+//	tk_archive_entry_set_mode(entry, st->st_mode);
 }
 #endif

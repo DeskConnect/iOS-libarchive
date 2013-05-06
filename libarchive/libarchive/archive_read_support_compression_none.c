@@ -33,7 +33,7 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read_support_compression_none.c 
  * so this is now a no-op.
  */
 int
-archive_read_support_compression_none(struct archive *a)
+tk_archive_read_support_compression_none(struct archive *a)
 {
 	(void)a; /* UNUSED */
 	return (ARCHIVE_OK);

@@ -29,15 +29,15 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read_support_format_all.c 174991
 #include "archive.h"
 
 int
-archive_read_support_format_all(struct archive *a)
+tk_archive_read_support_format_all(struct archive *a)
 {
-	archive_read_support_format_ar(a);
-	archive_read_support_format_cpio(a);
-	archive_read_support_format_empty(a);
-	archive_read_support_format_iso9660(a);
-	archive_read_support_format_mtree(a);
-	archive_read_support_format_tar(a);
-	archive_read_support_format_xar(a);
-	archive_read_support_format_zip(a);
+	tk_archive_read_support_format_ar(a);
+	tk_archive_read_support_format_cpio(a);
+	tk_archive_read_support_format_empty(a);
+	tk_archive_read_support_format_iso9660(a);
+	tk_archive_read_support_format_mtree(a);
+	tk_archive_read_support_format_tar(a);
+	tk_archive_read_support_format_xar(a);
+	tk_archive_read_support_format_zip(a);
 	return (ARCHIVE_OK);
 }

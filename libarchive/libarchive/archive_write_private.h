@@ -48,9 +48,9 @@ struct archive_write {
 	size_t			 null_length;
 
 	/* Callbacks to open/read/write/close archive stream. */
-	archive_open_callback	*client_opener;
-	archive_write_callback	*client_writer;
-	archive_close_callback	*client_closer;
+	tk_archive_open_callback	*client_opener;
+	tk_archive_write_callback	*client_writer;
+	tk_archive_close_callback	*client_closer;
 	void			*client_data;
 
 	/*
@@ -89,7 +89,7 @@ struct archive_write {
 
 	/*
 	 * Pointers to format-specific functions for writing.  They're
-	 * initialized by archive_write_set_format_XXX() calls.
+	 * initialized by tk_archive_write_set_format_XXX() calls.
 	 */
 	void	 *format_data;
 	const char *format_name;

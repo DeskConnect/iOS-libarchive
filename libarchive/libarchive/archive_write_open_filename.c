@@ -61,27 +61,27 @@ static int	file_open(struct archive *, void *);
 static ssize_t	file_write(struct archive *, void *, const void *buff, size_t);
 
 int
-archive_write_open_file(struct archive *a, const char *filename)
+tk_archive_write_open_file(struct archive *a, const char *filename)
 {
-	return (archive_write_open_filename(a, filename));
+	return (tk_archive_write_open_filename(a, filename));
 }
 
 int
-archive_write_open_filename(struct archive *a, const char *filename)
+tk_archive_write_open_filename(struct archive *a, const char *filename)
 {
 	struct write_file_data *mine;
 
 	if (filename == NULL || filename[0] == '\0')
-		return (archive_write_open_fd(a, 1));
+		return (tk_archive_write_open_fd(a, 1));
 
 	mine = (struct write_file_data *)malloc(sizeof(*mine) + strlen(filename));
 	if (mine == NULL) {
-		archive_set_error(a, ENOMEM, "No memory");
+		tk_archive_set_error(a, ENOMEM, "No memory");
 		return (ARCHIVE_FATAL);
 	}
 	strcpy(mine->filename, filename);
 	mine->fd = -1;
-	return (archive_write_open(a, mine,
+	return (tk_archive_write_open(a, mine,
 		file_open, file_write, file_close));
 }
 
@@ -100,13 +100,13 @@ file_open(struct archive *a, void *client_data)
 	 */
 	mine->fd = open(mine->filename, flags, 0666);
 	if (mine->fd < 0) {
-		archive_set_error(a, errno, "Failed to open '%s'",
+		tk_archive_set_error(a, errno, "Failed to open '%s'",
 		    mine->filename);
 		return (ARCHIVE_FATAL);
 	}
 
 	if (fstat(mine->fd, &st) != 0) {
-               archive_set_error(a, errno, "Couldn't stat '%s'",
+               tk_archive_set_error(a, errno, "Couldn't stat '%s'",
                    mine->filename);
                return (ARCHIVE_FATAL);
 	}
@@ -114,14 +114,14 @@ file_open(struct archive *a, void *client_data)
 	/*
 	 * Set up default last block handling.
 	 */
-	if (archive_write_get_bytes_in_last_block(a) < 0) {
+	if (tk_archive_write_get_bytes_in_last_block(a) < 0) {
 		if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode) ||
 		    S_ISFIFO(st.st_mode))
 			/* Pad last block when writing to device or FIFO. */
-			archive_write_set_bytes_in_last_block(a, 0);
+			tk_archive_write_set_bytes_in_last_block(a, 0);
 		else
 			/* Don't pad last block otherwise. */
-			archive_write_set_bytes_in_last_block(a, 1);
+			tk_archive_write_set_bytes_in_last_block(a, 1);
 	}
 
 	/*
@@ -130,7 +130,7 @@ file_open(struct archive *a, void *client_data)
 	 * entry to the output archive.
 	 */
 	if (S_ISREG(st.st_mode))
-		archive_write_set_skip_file(a, st.st_dev, st.st_ino);
+		tk_archive_write_set_skip_file(a, st.st_dev, st.st_ino);
 
 	return (ARCHIVE_OK);
 }
@@ -144,7 +144,7 @@ file_write(struct archive *a, void *client_data, const void *buff, size_t length
 	mine = (struct write_file_data *)client_data;
 	bytesWritten = write(mine->fd, buff, length);
 	if (bytesWritten <= 0) {
-		archive_set_error(a, errno, "Write error");
+		tk_archive_set_error(a, errno, "Write error");
 		return (-1);
 	}
 	return (bytesWritten);

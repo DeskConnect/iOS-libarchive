@@ -44,25 +44,25 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_format_by_name.c 20116
 static
 struct { const char *name; int (*setter)(struct archive *); } names[] =
 {
-	{ "ar",		archive_write_set_format_ar_bsd },
-	{ "arbsd",	archive_write_set_format_ar_bsd },
-	{ "argnu",	archive_write_set_format_ar_svr4 },
-	{ "arsvr4",	archive_write_set_format_ar_svr4 },
-	{ "cpio",	archive_write_set_format_cpio },
-	{ "mtree",	archive_write_set_format_mtree },
-	{ "newc",	archive_write_set_format_cpio_newc },
-	{ "odc",	archive_write_set_format_cpio },
-	{ "pax",	archive_write_set_format_pax },
-	{ "posix",	archive_write_set_format_pax },
-	{ "shar",	archive_write_set_format_shar },
-	{ "shardump",	archive_write_set_format_shar_dump },
-	{ "ustar",	archive_write_set_format_ustar },
-	{ "zip",	archive_write_set_format_zip },
+	{ "ar",		tk_archive_write_set_format_ar_bsd },
+	{ "arbsd",	tk_archive_write_set_format_ar_bsd },
+	{ "argnu",	tk_archive_write_set_format_ar_svr4 },
+	{ "arsvr4",	tk_archive_write_set_format_ar_svr4 },
+	{ "cpio",	tk_archive_write_set_format_cpio },
+	{ "mtree",	tk_archive_write_set_format_mtree },
+	{ "newc",	tk_archive_write_set_format_cpio_newc },
+	{ "odc",	tk_archive_write_set_format_cpio },
+	{ "pax",	tk_archive_write_set_format_pax },
+	{ "posix",	tk_archive_write_set_format_pax },
+	{ "shar",	tk_archive_write_set_format_shar },
+	{ "shardump",	tk_archive_write_set_format_shar_dump },
+	{ "ustar",	tk_archive_write_set_format_ustar },
+	{ "zip",	tk_archive_write_set_format_zip },
 	{ NULL,		NULL }
 };
 
 int
-archive_write_set_format_by_name(struct archive *a, const char *name)
+tk_archive_write_set_format_by_name(struct archive *a, const char *name)
 {
 	int i;
 
@@ -71,6 +71,6 @@ archive_write_set_format_by_name(struct archive *a, const char *name)
 			return ((names[i].setter)(a));
 	}
 
-	archive_set_error(a, EINVAL, "No such format '%s'", name);
+	tk_archive_set_error(a, EINVAL, "No such format '%s'", name);
 	return (ARCHIVE_FATAL);
 }

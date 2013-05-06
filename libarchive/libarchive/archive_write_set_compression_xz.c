@@ -48,17 +48,17 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_compression_xz.c 20110
 
 #ifndef HAVE_LZMA_H
 int
-archive_write_set_compression_xz(struct archive *a)
+tk_archive_write_set_compression_xz(struct archive *a)
 {
-	archive_set_error(a, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(a, ARCHIVE_ERRNO_MISC,
 	    "xz compression not supported on this platform");
 	return (ARCHIVE_FATAL);
 }
 
 int
-archive_write_set_compression_lzma(struct archive *a)
+tk_archive_write_set_compression_lzma(struct archive *a)
 {
-	archive_set_error(a, ARCHIVE_ERRNO_MISC,
+	tk_archive_set_error(a, ARCHIVE_ERRNO_MISC,
 	    "lzma compression not supported on this platform");
 	return (ARCHIVE_FATAL);
 }
@@ -78,11 +78,11 @@ struct private_config {
 	int		 compression_level;
 };
 
-static int	archive_compressor_xz_init(struct archive_write *);
-static int	archive_compressor_xz_options(struct archive_write *,
+static int	tk_archive_compressor_xz_init(struct archive_write *);
+static int	tk_archive_compressor_xz_options(struct archive_write *,
 		    const char *, const char *);
-static int	archive_compressor_xz_finish(struct archive_write *);
-static int	archive_compressor_xz_write(struct archive_write *,
+static int	tk_archive_compressor_xz_finish(struct archive_write *);
+static int	tk_archive_compressor_xz_write(struct archive_write *,
 		    const void *, size_t);
 static int	drive_compressor(struct archive_write *, struct private_data *,
 		    int finishing);
@@ -92,7 +92,7 @@ static int	drive_compressor(struct archive_write *, struct private_data *,
  * Allocate, initialize and return a archive object.
  */
 int
-archive_write_set_compression_xz(struct archive *_a)
+tk_archive_write_set_compression_xz(struct archive *_a)
 {
 	struct private_config *config;
 	struct archive_write *a = (struct archive_write *)_a;
@@ -100,7 +100,7 @@ archive_write_set_compression_xz(struct archive *_a)
 	    ARCHIVE_STATE_NEW, "archive_write_set_compression_xz");
 	config = calloc(1, sizeof(*config));
 	if (config == NULL) {
-		archive_set_error(&a->archive, ENOMEM, "Out of memory");
+		tk_archive_set_error(&a->archive, ENOMEM, "Out of memory");
 		return (ARCHIVE_FATAL);
 	}
 	a->compressor.config = config;
@@ -117,10 +117,10 @@ archive_write_set_compression_xz(struct archive *_a)
  * code set.  (The liblzma setup looks at the code to determine
  * the one place that XZ and LZMA require different handling.) */
 int
-archive_write_set_compression_lzma(struct archive *_a)
+tk_archive_write_set_compression_lzma(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
-	int r = archive_write_set_compression_xz(_a);
+	int r = tk_archive_write_set_compression_xz(_a);
 	if (r != ARCHIVE_OK)
 		return (r);
 	a->archive.compression_code = ARCHIVE_COMPRESSION_LZMA;
@@ -129,7 +129,7 @@ archive_write_set_compression_lzma(struct archive *_a)
 }
 
 static int
-archive_compressor_xz_init_stream(struct archive_write *a,
+tk_archive_compressor_xz_init_stream(struct archive_write *a,
     struct private_data *state)
 {
 	int ret;
@@ -147,12 +147,12 @@ archive_compressor_xz_init_stream(struct archive_write *a,
 
 	switch (ret) {
 	case LZMA_MEM_ERROR:
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Internal error initializing compression library: "
 		    "Cannot allocate memory");
 		break;
 	default:
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library: "
 		    "It's a bug in liblzma");
 		break;
@@ -164,7 +164,7 @@ archive_compressor_xz_init_stream(struct archive_write *a,
  * Setup callback.
  */
 static int
-archive_compressor_xz_init(struct archive_write *a)
+tk_archive_compressor_xz_init(struct archive_write *a)
 {
 	int ret;
 	struct private_data *state;
@@ -178,7 +178,7 @@ archive_compressor_xz_init(struct archive_write *a)
 
 	state = (struct private_data *)malloc(sizeof(*state));
 	if (state == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression");
 		return (ARCHIVE_FATAL);
 	}
@@ -192,7 +192,7 @@ archive_compressor_xz_init(struct archive_write *a)
 	state->compressed_buffer_size = a->bytes_per_block;
 	state->compressed = (unsigned char *)malloc(state->compressed_buffer_size);
 	if (state->compressed == NULL) {
-		archive_set_error(&a->archive, ENOMEM,
+		tk_archive_set_error(&a->archive, ENOMEM,
 		    "Can't allocate data for compression buffer");
 		free(state);
 		return (ARCHIVE_FATAL);
@@ -201,7 +201,7 @@ archive_compressor_xz_init(struct archive_write *a)
 
 	/* Initialize compression library. */
 	if (lzma_lzma_preset(&state->lzma_opt, config->compression_level)) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Internal error initializing compression library");
 		free(state->compressed);
 		free(state);
@@ -209,7 +209,7 @@ archive_compressor_xz_init(struct archive_write *a)
 	state->lzmafilters[0].id = LZMA_FILTER_LZMA2;
 	state->lzmafilters[0].options = &state->lzma_opt;
 	state->lzmafilters[1].id = LZMA_VLI_UNKNOWN;/* Terminate */
-	ret = archive_compressor_xz_init_stream(a, state);
+	ret = tk_archive_compressor_xz_init_stream(a, state);
 	if (ret == LZMA_OK) {
 		a->compressor.data = state;
 		return (0);
@@ -225,7 +225,7 @@ archive_compressor_xz_init(struct archive_write *a)
  * Set write options.
  */
 static int
-archive_compressor_xz_options(struct archive_write *a, const char *key,
+tk_archive_compressor_xz_options(struct archive_write *a, const char *key,
     const char *value)
 {
 	struct private_config *config;
@@ -248,7 +248,7 @@ archive_compressor_xz_options(struct archive_write *a, const char *key,
  * Write data to the compressed stream.
  */
 static int
-archive_compressor_xz_write(struct archive_write *a, const void *buff,
+tk_archive_compressor_xz_write(struct archive_write *a, const void *buff,
     size_t length)
 {
 	struct private_data *state;
@@ -256,7 +256,7 @@ archive_compressor_xz_write(struct archive_write *a, const void *buff,
 
 	state = (struct private_data *)a->compressor.data;
 	if (a->client_writer == NULL) {
-		archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
+		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_PROGRAMMER,
 		    "No write callback is registered?  "
 		    "This is probably an internal programming error.");
 		return (ARCHIVE_FATAL);
@@ -280,7 +280,7 @@ archive_compressor_xz_write(struct archive_write *a, const void *buff,
  * Finish the compression...
  */
 static int
-archive_compressor_xz_finish(struct archive_write *a)
+tk_archive_compressor_xz_finish(struct archive_write *a)
 {
 	ssize_t block_length, target_block_length, bytes_written;
 	int ret;
@@ -291,7 +291,7 @@ archive_compressor_xz_finish(struct archive_write *a)
 	state = (struct private_data *)a->compressor.data;
 	if (state != NULL) {
 		if (a->client_writer == NULL) {
-			archive_set_error(&a->archive,
+			tk_archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_PROGRAMMER,
 			    "No write callback is registered?  "
 			    "This is probably an internal programming error.");
@@ -414,11 +414,11 @@ drive_compressor(struct archive_write *a, struct private_data *state, int finish
 			/* This return can only occur in finishing case. */
 			if (finishing)
 				return (ARCHIVE_OK);
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "lzma compression data error");
 			return (ARCHIVE_FATAL);
 		case LZMA_MEMLIMIT_ERROR:
-			archive_set_error(&a->archive, ENOMEM,
+			tk_archive_set_error(&a->archive, ENOMEM,
 			    "lzma compression error: "
 			    "%ju MiB would have been needed",
 			    (lzma_memusage(&(state->stream)) + 1024 * 1024 -1)
@@ -426,7 +426,7 @@ drive_compressor(struct archive_write *a, struct private_data *state, int finish
 			return (ARCHIVE_FATAL);
 		default:
 			/* Any other return value indicates an error. */
-			archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+			tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 			    "lzma compression failed:"
 			    " lzma_code() call returned status %d",
 			    ret);

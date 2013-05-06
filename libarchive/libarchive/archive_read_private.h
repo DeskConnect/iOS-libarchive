@@ -67,7 +67,7 @@ struct archive_read_filter_bidder {
 
 /*
  * This structure is allocated within the archive_read core
- * and initialized by archive_read and the init() method of the
+ * and initialized by tk_archive_read and the init() method of the
  * corresponding bidder above.
  */
 struct archive_read_filter {
@@ -111,9 +111,9 @@ struct archive_read_filter {
  * so should be deferred at least until libarchive 3.0.
  */
 struct archive_read_client {
-	archive_read_callback	*reader;
-	archive_skip_callback	*skipper;
-	archive_close_callback	*closer;
+	tk_archive_read_callback	*reader;
+	tk_archive_skip_callback	*skipper;
+	tk_archive_close_callback	*closer;
 };
 
 struct archive_read {
@@ -126,7 +126,7 @@ struct archive_read {
 	ino_t		  skip_file_ino;
 
 	/*
-	 * Used by archive_read_data() to track blocks and copy
+	 * Used by tk_archive_read_data() to track blocks and copy
 	 * data to client buffers, filling gaps with zero bytes.
 	 */
 	const char	 *read_data_block;

@@ -56,9 +56,9 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read_support_compression_program
 #include "archive_read_private.h"
 
 int
-archive_read_support_compression_program(struct archive *a, const char *cmd)
+tk_archive_read_support_compression_program(struct archive *a, const char *cmd)
 {
-	return (archive_read_support_compression_program_signature(a, cmd, NULL, 0));
+	return (tk_archive_read_support_compression_program_signature(a, cmd, NULL, 0));
 }
 
 
@@ -71,7 +71,7 @@ archive_read_support_compression_program(struct archive *a, const char *cmd)
  * this function is actually invoked.
  */
 int
-archive_read_support_compression_program_signature(struct archive *_a,
+tk_archive_read_support_compression_program_signature(struct archive *_a,
     const char *cmd, void *signature, size_t signature_len)
 {
 	(void)_a; /* UNUSED */
@@ -79,7 +79,7 @@ archive_read_support_compression_program_signature(struct archive *_a,
 	(void)signature; /* UNUSED */
 	(void)signature_len; /* UNUSED */
 
-	archive_set_error(_a, -1,
+	tk_archive_set_error(_a, -1,
 	    "External compression programs not supported on this platform");
 	return (ARCHIVE_FATAL);
 }
@@ -90,7 +90,7 @@ __archive_read_program(struct archive_read_filter *self, const char *cmd)
 	(void)self; /* UNUSED */
 	(void)cmd; /* UNUSED */
 
-	archive_set_error(&self->archive->archive, -1,
+	tk_archive_set_error(&self->archive->archive, -1,
 	    "External compression programs not supported on this platform");
 	return (ARCHIVE_FATAL);
 }
@@ -135,7 +135,7 @@ static ssize_t	program_filter_read(struct archive_read_filter *,
 static int	program_filter_close(struct archive_read_filter *);
 
 int
-archive_read_support_compression_program_signature(struct archive *_a,
+tk_archive_read_support_compression_program_signature(struct archive *_a,
     const char *cmd, const void *signature, size_t signature_len)
 {
 	struct archive_read *a = (struct archive_read *)_a;
@@ -246,7 +246,7 @@ child_stop(struct archive_read_filter *self, struct program_filter *state)
 
 	if (state->waitpid_return < 0) {
 		/* waitpid() failed?  This is ugly. */
-		archive_set_error(&self->archive->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&self->archive->archive, ARCHIVE_ERRNO_MISC,
 		    "Child process exited badly");
 		return (ARCHIVE_WARN);
 	}
@@ -263,7 +263,7 @@ child_stop(struct archive_read_filter *self, struct program_filter *state)
 		if (WTERMSIG(state->exit_status) == SIGPIPE)
 			return (ARCHIVE_OK);
 #endif
-		archive_set_error(&self->archive->archive, ARCHIVE_ERRNO_MISC,
+		tk_archive_set_error(&self->archive->archive, ARCHIVE_ERRNO_MISC,
 		    "Child process exited with signal %d",
 		    WTERMSIG(state->exit_status));
 		return (ARCHIVE_WARN);
@@ -274,7 +274,7 @@ child_stop(struct archive_read_filter *self, struct program_filter *state)
 		if (WEXITSTATUS(state->exit_status) == 0)
 			return (ARCHIVE_OK);
 
-		archive_set_error(&self->archive->archive,
+		tk_archive_set_error(&self->archive->archive,
 		    ARCHIVE_ERRNO_MISC,
 		    "Child process exited with status %d",
 		    WEXITSTATUS(state->exit_status));
@@ -366,7 +366,7 @@ __archive_read_program(struct archive_read_filter *self, const char *cmd)
 	out_buf = (char *)malloc(out_buf_len);
 	description = (char *)malloc(strlen(prefix) + strlen(cmd) + 1);
 	if (state == NULL || out_buf == NULL || description == NULL) {
-		archive_set_error(&self->archive->archive, ENOMEM,
+		tk_archive_set_error(&self->archive->archive, ENOMEM,
 		    "Can't allocate input data");
 		free(state);
 		free(out_buf);
@@ -387,7 +387,7 @@ __archive_read_program(struct archive_read_filter *self, const char *cmd)
 		 &state->child_stdin, &state->child_stdout)) == -1) {
 		free(state->out_buf);
 		free(state);
-		archive_set_error(&self->archive->archive, EINVAL,
+		tk_archive_set_error(&self->archive->archive, EINVAL,
 		    "Can't initialise filter");
 		return (ARCHIVE_FATAL);
 	}

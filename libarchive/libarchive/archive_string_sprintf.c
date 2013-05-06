@@ -54,14 +54,14 @@ append_uint(struct archive_string *as, uintmax_t d, unsigned base)
 	static const char *digits = "0123456789abcdef";
 	if (d >= base)
 		append_uint(as, d/base, base);
-	archive_strappend_char(as, digits[d % base]);
+	tk_archive_strappend_char(as, digits[d % base]);
 }
 
 static void
 append_int(struct archive_string *as, intmax_t d, unsigned base)
 {
 	if (d < 0) {
-		archive_strappend_char(as, '-');
+		tk_archive_strappend_char(as, '-');
 		d = -d;
 	}
 	append_uint(as, d, base);
@@ -74,7 +74,7 @@ __archive_string_sprintf(struct archive_string *as, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	archive_string_vsprintf(as, fmt, ap);
+	tk_archive_string_vsprintf(as, fmt, ap);
 	va_end(ap);
 }
 
@@ -103,7 +103,7 @@ __archive_string_vsprintf(struct archive_string *as, const char *fmt,
 		const char *saved_p = p;
 
 		if (*p != '%') {
-			archive_strappend_char(as, *p);
+			tk_archive_strappend_char(as, *p);
 			continue;
 		}
 
@@ -139,7 +139,7 @@ __archive_string_vsprintf(struct archive_string *as, const char *fmt,
 			break;
 		case 's':
 			p2 = va_arg(ap, char *);
-			archive_strcat(as, p2);
+			tk_archive_strcat(as, p2);
 			break;
 		case 'o': case 'u': case 'x': case 'X':
 			/* Common handling for unsigned integer formats. */
@@ -158,7 +158,7 @@ __archive_string_vsprintf(struct archive_string *as, const char *fmt,
 		default:
 			/* Rewind and print the initial '%' literally. */
 			p = saved_p;
-			archive_strappend_char(as, *p);
+			tk_archive_strappend_char(as, *p);
 		}
 	}
 }

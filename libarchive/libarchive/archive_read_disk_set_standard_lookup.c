@@ -49,9 +49,9 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_read_disk_set_standard_lookup.c 
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 int
-archive_read_disk_set_standard_lookup(struct archive *a)
+tk_archive_read_disk_set_standard_lookup(struct archive *a)
 {
-	archive_set_error(a, -1, "Standard lookups not available on Windows");
+	tk_archive_set_error(a, -1, "Standard lookups not available on Windows");
 	return (ARCHIVE_FATAL);
 }
 #else /* ! (_WIN32 && !__CYGWIN__) */
@@ -92,13 +92,13 @@ static const char *	lookup_uname_helper(struct name_cache *, id_t uid);
  * if you prefer.
  */
 int
-archive_read_disk_set_standard_lookup(struct archive *a)
+tk_archive_read_disk_set_standard_lookup(struct archive *a)
 {
 	struct name_cache *ucache = malloc(sizeof(struct name_cache));
 	struct name_cache *gcache = malloc(sizeof(struct name_cache));
 
 	if (ucache == NULL || gcache == NULL) {
-		archive_set_error(a, ENOMEM,
+		tk_archive_set_error(a, ENOMEM,
 		    "Can't allocate uname/gname lookup cache");
 		free(ucache);
 		free(gcache);
@@ -112,8 +112,8 @@ archive_read_disk_set_standard_lookup(struct archive *a)
 	gcache->archive = a;
 	gcache->size = name_cache_size;
 
-	archive_read_disk_set_gname_lookup(a, gcache, lookup_gname, cleanup);
-	archive_read_disk_set_uname_lookup(a, ucache, lookup_uname, cleanup);
+	tk_archive_read_disk_set_gname_lookup(a, gcache, lookup_gname, cleanup);
+	tk_archive_read_disk_set_uname_lookup(a, ucache, lookup_uname, cleanup);
 
 	return (ARCHIVE_OK);
 }
@@ -214,7 +214,7 @@ lookup_uname_helper(struct name_cache *cache, id_t id)
 			break;
 	}
 	if (r != 0) {
-		archive_set_error(cache->archive, errno,
+		tk_archive_set_error(cache->archive, errno,
 		    "Can't lookup user for id %d", (int)id);
 		return (NULL);
 	}
@@ -276,7 +276,7 @@ lookup_gname_helper(struct name_cache *cache, id_t id)
 			break;
 	}
 	if (r != 0) {
-		archive_set_error(cache->archive, errno,
+		tk_archive_set_error(cache->archive, errno,
 		    "Can't lookup group for id %d", (int)id);
 		return (NULL);
 	}
