@@ -48,7 +48,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://bitbucket.org/Enharmonic/ios-libarchive-mirror.git", :tag => "0.1" }
 
 
-  s.source_files  = "libarchive/libarchive", "arc"
+  s.source_files  = "libarchive/libarchive", "libarchive/tar", "arc"
 
   s.library   = "z"
 
