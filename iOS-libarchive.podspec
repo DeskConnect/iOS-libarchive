@@ -49,7 +49,7 @@ Pod::Spec.new do |s|
 
 
   s.source_files  = "libarchive/libarchive", "libarchive/tar", "libarchive/libarchive_fe", "arc"
-
+  s.exclude_files = "libarchive/tar/cmdline.c"
   s.library   = "z"
 
   s.requires_arc = false
