@@ -48,7 +48,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://bitbucket.org/Enharmonic/ios-libarchive-mirror.git", :tag => "0.1" }
 
 
-  s.source_files  = "libarchive/libarchive", "bzip2/blocksort.c", "bzip2/bzlib.c", "bzip2/compress.c", "bzip2/crctable.c", "bzip2/decompress.c", "bzip2/huffman.c", "bzip2/randtable.c", "arc"
+  s.source_files  = "libarchive/libarchive", "bzip2/blocksort.c", "bzip2/bzlib_private.h", "bzip2/bzlib.h", "bzip2/bzlib.c", "bzip2/compress.c", "bzip2/crctable.c", "bzip2/decompress.c", "bzip2/huffman.c", "bzip2/randtable.c", "libarchive/tar/bsdtar_platform.h", "arc"
   s.library   = "z"
 
   s.requires_arc = false
