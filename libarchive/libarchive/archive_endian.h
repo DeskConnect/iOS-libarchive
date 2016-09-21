@@ -44,65 +44,99 @@
  * - Watcom C++ in C code.  (For any version?)
  * - SGI MIPSpro
  * - Microsoft Visual C++ 6.0 (supposedly newer versions too)
+ * - IBM VisualAge 6 (XL v6)
+ * - Sun WorkShop C (SunPro) before 5.9
  */
 #if defined(__WATCOMC__) || defined(__sgi) || defined(__hpux) || defined(__BORLANDC__)
 #define	inline
-#elif defined(_MSC_VER)
+#elif defined(__IBMC__) && __IBMC__ < 700
+#define	inline
+#elif defined(__SUNPRO_C) && __SUNPRO_C < 0x590
+#define inline
+#elif defined(_MSC_VER) || defined(__osf__)
 #define inline __inline
 #endif
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 
 static inline uint16_t
-tk_archive_be16dec(const void *pp)
+archive_be16dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return ((p[0] << 8) | p[1]);
+	/* Store into unsigned temporaries before left shifting, to avoid
+	promotion to signed int and then left shifting into the sign bit,
+	which is undefined behaviour. */
+	unsigned int p1 = p[1];
+	unsigned int p0 = p[0];
+
+	return ((p0 << 8) | p1);
 }
 
 static inline uint32_t
-tk_archive_be32dec(const void *pp)
+archive_be32dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]);
+	/* Store into unsigned temporaries before left shifting, to avoid
+	promotion to signed int and then left shifting into the sign bit,
+	which is undefined behaviour. */
+	unsigned int p3 = p[3];
+	unsigned int p2 = p[2];
+	unsigned int p1 = p[1];
+	unsigned int p0 = p[0];
+
+	return ((p0 << 24) | (p1 << 16) | (p2 << 8) | p3);
 }
 
 static inline uint64_t
-tk_archive_be64dec(const void *pp)
+archive_be64dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return (((uint64_t)tk_archive_be32dec(p) << 32) | tk_archive_be32dec(p + 4));
+	return (((uint64_t)archive_be32dec(p) << 32) | archive_be32dec(p + 4));
 }
 
 static inline uint16_t
-tk_archive_le16dec(const void *pp)
+archive_le16dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return ((p[1] << 8) | p[0]);
+	/* Store into unsigned temporaries before left shifting, to avoid
+	promotion to signed int and then left shifting into the sign bit,
+	which is undefined behaviour. */
+	unsigned int p1 = p[1];
+	unsigned int p0 = p[0];
+
+	return ((p1 << 8) | p0);
 }
 
 static inline uint32_t
-tk_archive_le32dec(const void *pp)
+archive_le32dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
+	/* Store into unsigned temporaries before left shifting, to avoid
+	promotion to signed int and then left shifting into the sign bit,
+	which is undefined behaviour. */
+	unsigned int p3 = p[3];
+	unsigned int p2 = p[2];
+	unsigned int p1 = p[1];
+	unsigned int p0 = p[0];
+
+	return ((p3 << 24) | (p2 << 16) | (p1 << 8) | p0);
 }
 
 static inline uint64_t
-tk_archive_le64dec(const void *pp)
+archive_le64dec(const void *pp)
 {
 	unsigned char const *p = (unsigned char const *)pp;
 
-	return (((uint64_t)tk_archive_le32dec(p + 4) << 32) | tk_archive_le32dec(p));
+	return (((uint64_t)archive_le32dec(p + 4) << 32) | archive_le32dec(p));
 }
 
 static inline void
-tk_archive_be16enc(void *pp, uint16_t u)
+archive_be16enc(void *pp, uint16_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -111,7 +145,7 @@ tk_archive_be16enc(void *pp, uint16_t u)
 }
 
 static inline void
-tk_archive_be32enc(void *pp, uint32_t u)
+archive_be32enc(void *pp, uint32_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -122,16 +156,16 @@ tk_archive_be32enc(void *pp, uint32_t u)
 }
 
 static inline void
-tk_archive_be64enc(void *pp, uint64_t u)
+archive_be64enc(void *pp, uint64_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
-	tk_archive_be32enc(p, u >> 32);
-	tk_archive_be32enc(p + 4, u & 0xffffffff);
+	archive_be32enc(p, (uint32_t)(u >> 32));
+	archive_be32enc(p + 4, (uint32_t)(u & 0xffffffff));
 }
 
 static inline void
-tk_archive_le16enc(void *pp, uint16_t u)
+archive_le16enc(void *pp, uint16_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -140,7 +174,7 @@ tk_archive_le16enc(void *pp, uint16_t u)
 }
 
 static inline void
-tk_archive_le32enc(void *pp, uint32_t u)
+archive_le32enc(void *pp, uint32_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
@@ -151,12 +185,12 @@ tk_archive_le32enc(void *pp, uint32_t u)
 }
 
 static inline void
-tk_archive_le64enc(void *pp, uint64_t u)
+archive_le64enc(void *pp, uint64_t u)
 {
 	unsigned char *p = (unsigned char *)pp;
 
-	tk_archive_le32enc(p, u & 0xffffffff);
-	tk_archive_le32enc(p + 4, u >> 32);
+	archive_le32enc(p, (uint32_t)(u & 0xffffffff));
+	archive_le32enc(p + 4, (uint32_t)(u >> 32));
 }
 
 #endif

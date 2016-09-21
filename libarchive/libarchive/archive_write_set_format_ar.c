@@ -48,6 +48,7 @@ struct ar_w {
 	uint64_t	 entry_padding;
 	int		 is_strtab;
 	int		 has_strtab;
+	char		 wrote_global_header;
 	char		*strtab;
 };
 
@@ -69,23 +70,27 @@ struct ar_w {
 #define AR_fmag_offset 58
 #define AR_fmag_size 2
 
-static int		 tk_archive_write_set_format_ar(struct archive_write *);
-static int		 tk_archive_write_ar_header(struct archive_write *,
+static int		 archive_write_set_format_ar(struct archive_write *);
+static int		 archive_write_ar_header(struct archive_write *,
 			     struct archive_entry *);
-static ssize_t		 tk_archive_write_ar_data(struct archive_write *,
+static ssize_t		 archive_write_ar_data(struct archive_write *,
 			     const void *buff, size_t s);
-static int		 tk_archive_write_ar_destroy(struct archive_write *);
-static int		 tk_archive_write_ar_finish(struct archive_write *);
-static int		 tk_archive_write_ar_finish_entry(struct archive_write *);
+static int		 archive_write_ar_free(struct archive_write *);
+static int		 archive_write_ar_close(struct archive_write *);
+static int		 archive_write_ar_finish_entry(struct archive_write *);
 static const char	*ar_basename(const char *path);
 static int		 format_octal(int64_t v, char *p, int s);
 static int		 format_decimal(int64_t v, char *p, int s);
 
 int
-tk_archive_write_set_format_ar_bsd(struct archive *_a)
+archive_write_set_format_ar_bsd(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
-	int r = tk_archive_write_set_format_ar(a);
+	int r;
+
+	archive_check_magic(_a, ARCHIVE_WRITE_MAGIC,
+	    ARCHIVE_STATE_NEW, "archive_write_set_format_ar_bsd");
+	r = archive_write_set_format_ar(a);
 	if (r == ARCHIVE_OK) {
 		a->archive.archive_format = ARCHIVE_FORMAT_AR_BSD;
 		a->archive.archive_format_name = "ar (BSD)";
@@ -94,10 +99,14 @@ tk_archive_write_set_format_ar_bsd(struct archive *_a)
 }
 
 int
-tk_archive_write_set_format_ar_svr4(struct archive *_a)
+archive_write_set_format_ar_svr4(struct archive *_a)
 {
 	struct archive_write *a = (struct archive_write *)_a;
-	int r = tk_archive_write_set_format_ar(a);
+	int r;
+
+	archive_check_magic(_a, ARCHIVE_WRITE_MAGIC,
+	    ARCHIVE_STATE_NEW, "archive_write_set_format_ar_svr4");
+	r = archive_write_set_format_ar(a);
 	if (r == ARCHIVE_OK) {
 		a->archive.archive_format = ARCHIVE_FORMAT_AR_GNU;
 		a->archive.archive_format_name = "ar (GNU/SVR4)";
@@ -109,33 +118,33 @@ tk_archive_write_set_format_ar_svr4(struct archive *_a)
  * Generic initialization.
  */
 static int
-tk_archive_write_set_format_ar(struct archive_write *a)
+archive_write_set_format_ar(struct archive_write *a)
 {
 	struct ar_w *ar;
 
 	/* If someone else was already registered, unregister them. */
-	if (a->format_destroy != NULL)
-		(a->format_destroy)(a);
+	if (a->format_free != NULL)
+		(a->format_free)(a);
 
 	ar = (struct ar_w *)malloc(sizeof(*ar));
 	if (ar == NULL) {
-		tk_archive_set_error(&a->archive, ENOMEM, "Can't allocate ar data");
+		archive_set_error(&a->archive, ENOMEM, "Can't allocate ar data");
 		return (ARCHIVE_FATAL);
 	}
 	memset(ar, 0, sizeof(*ar));
 	a->format_data = ar;
 
 	a->format_name = "ar";
-	a->format_write_header = tk_archive_write_ar_header;
-	a->format_write_data = tk_archive_write_ar_data;
-	a->format_finish = tk_archive_write_ar_finish;
-	a->format_destroy = tk_archive_write_ar_destroy;
-	a->format_finish_entry = tk_archive_write_ar_finish_entry;
+	a->format_write_header = archive_write_ar_header;
+	a->format_write_data = archive_write_ar_data;
+	a->format_close = archive_write_ar_close;
+	a->format_free = archive_write_ar_free;
+	a->format_finish_entry = archive_write_ar_finish_entry;
 	return (ARCHIVE_OK);
 }
 
 static int
-tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
+archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 {
 	int ret, append_fn;
 	char buff[60];
@@ -149,15 +158,15 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 	ar = (struct ar_w *)a->format_data;
 	ar->is_strtab = 0;
 	filename = NULL;
-	size = tk_archive_entry_size(entry);
+	size = archive_entry_size(entry);
 
 
 	/*
 	 * Reject files with empty name.
 	 */
-	pathname = tk_archive_entry_pathname(entry);
-	if (*pathname == '\0') {
-		tk_archive_set_error(&a->archive, EINVAL,
+	pathname = archive_entry_pathname(entry);
+	if (pathname == NULL || *pathname == '\0') {
+		archive_set_error(&a->archive, EINVAL,
 		    "Invalid filename");
 		return (ARCHIVE_WARN);
 	}
@@ -166,8 +175,10 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 	 * If we are now at the beginning of the archive,
 	 * we need first write the ar global header.
 	 */
-	if (a->archive.file_position == 0)
-		(a->compressor.write)(a, "!<arch>\n", 8);
+	if (!ar->wrote_global_header) {
+		__archive_write_output(a, "!<arch>\n", 8);
+		ar->wrote_global_header = 1;
+	}
 
 	memset(buff, ' ', 60);
 	strncpy(&buff[AR_fmag_offset], "`\n", 2);
@@ -190,7 +201,7 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 		ar->is_strtab = 1;
 		buff[AR_name_offset] = buff[AR_name_offset + 1] = '/';
 		/*
-		 * For archive string table, only ar_size filed should
+		 * For archive string table, only ar_size field should
 		 * be set.
 		 */
 		goto size;
@@ -202,7 +213,7 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 	 */
 	if ((filename = ar_basename(pathname)) == NULL) {
 		/* Reject filenames with trailing "/" */
-		tk_archive_set_error(&a->archive, EINVAL,
+		archive_set_error(&a->archive, EINVAL,
 		    "Invalid filename");
 		return (ARCHIVE_WARN);
 	}
@@ -226,14 +237,14 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 			 * The string table should have been written before.
 			 */
 			if (ar->has_strtab <= 0) {
-				tk_archive_set_error(&a->archive, EINVAL,
+				archive_set_error(&a->archive, EINVAL,
 				    "Can't find string table");
 				return (ARCHIVE_WARN);
 			}
 
 			se = (char *)malloc(strlen(filename) + 3);
 			if (se == NULL) {
-				tk_archive_set_error(&a->archive, ENOMEM,
+				archive_set_error(&a->archive, ENOMEM,
 				    "Can't allocate filename buffer");
 				return (ARCHIVE_FATAL);
 			}
@@ -245,7 +256,7 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 			free(se);
 
 			if (ss == NULL) {
-				tk_archive_set_error(&a->archive, EINVAL,
+				archive_set_error(&a->archive, EINVAL,
 				    "Invalid string table");
 				return (ARCHIVE_WARN);
 			}
@@ -259,7 +270,7 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 			if (format_decimal(ss - ar->strtab,
 			    buff + AR_name_offset + 1,
 			    AR_name_size - 1)) {
-				tk_archive_set_error(&a->archive, ERANGE,
+				archive_set_error(&a->archive, ERANGE,
 				    "string table offset too large");
 				return (ARCHIVE_WARN);
 			}
@@ -283,7 +294,7 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 			if (format_decimal(strlen(filename),
 			    buff + AR_name_offset + 3,
 			    AR_name_size - 3)) {
-				tk_archive_set_error(&a->archive, ERANGE,
+				archive_set_error(&a->archive, ERANGE,
 				    "File name too long");
 				return (ARCHIVE_WARN);
 			}
@@ -293,23 +304,23 @@ tk_archive_write_ar_header(struct archive_write *a, struct archive_entry *entry)
 	}
 
 stat:
-	if (format_decimal(tk_archive_entry_mtime(entry), buff + AR_date_offset, AR_date_size)) {
-		tk_archive_set_error(&a->archive, ERANGE,
+	if (format_decimal(archive_entry_mtime(entry), buff + AR_date_offset, AR_date_size)) {
+		archive_set_error(&a->archive, ERANGE,
 		    "File modification time too large");
 		return (ARCHIVE_WARN);
 	}
-	if (format_decimal(tk_archive_entry_uid(entry), buff + AR_uid_offset, AR_uid_size)) {
-		tk_archive_set_error(&a->archive, ERANGE,
+	if (format_decimal(archive_entry_uid(entry), buff + AR_uid_offset, AR_uid_size)) {
+		archive_set_error(&a->archive, ERANGE,
 		    "Numeric user ID too large");
 		return (ARCHIVE_WARN);
 	}
-	if (format_decimal(tk_archive_entry_gid(entry), buff + AR_gid_offset, AR_gid_size)) {
-		tk_archive_set_error(&a->archive, ERANGE,
+	if (format_decimal(archive_entry_gid(entry), buff + AR_gid_offset, AR_gid_size)) {
+		archive_set_error(&a->archive, ERANGE,
 		    "Numeric group ID too large");
 		return (ARCHIVE_WARN);
 	}
-	if (format_octal(tk_archive_entry_mode(entry), buff + AR_mode_offset, AR_mode_size)) {
-		tk_archive_set_error(&a->archive, ERANGE,
+	if (format_octal(archive_entry_mode(entry), buff + AR_mode_offset, AR_mode_size)) {
+		archive_set_error(&a->archive, ERANGE,
 		    "Numeric mode too large");
 		return (ARCHIVE_WARN);
 	}
@@ -317,20 +328,20 @@ stat:
 	 * Sanity Check: A non-pseudo archive member should always be
 	 * a regular file.
 	 */
-	if (filename != NULL && tk_archive_entry_filetype(entry) != AE_IFREG) {
-		tk_archive_set_error(&a->archive, EINVAL,
+	if (filename != NULL && archive_entry_filetype(entry) != AE_IFREG) {
+		archive_set_error(&a->archive, EINVAL,
 		    "Regular file required for non-pseudo member");
 		return (ARCHIVE_WARN);
 	}
 
 size:
 	if (format_decimal(size, buff + AR_size_offset, AR_size_size)) {
-		tk_archive_set_error(&a->archive, ERANGE,
+		archive_set_error(&a->archive, ERANGE,
 		    "File size out of range");
 		return (ARCHIVE_WARN);
 	}
 
-	ret = (a->compressor.write)(a, buff, 60);
+	ret = __archive_write_output(a, buff, 60);
 	if (ret != ARCHIVE_OK)
 		return (ret);
 
@@ -338,7 +349,7 @@ size:
 	ar->entry_padding = ar->entry_bytes_remaining % 2;
 
 	if (append_fn > 0) {
-		ret = (a->compressor.write)(a, filename, strlen(filename));
+		ret = __archive_write_output(a, filename, strlen(filename));
 		if (ret != ARCHIVE_OK)
 			return (ret);
 		ar->entry_bytes_remaining -= strlen(filename);
@@ -348,25 +359,25 @@ size:
 }
 
 static ssize_t
-tk_archive_write_ar_data(struct archive_write *a, const void *buff, size_t s)
+archive_write_ar_data(struct archive_write *a, const void *buff, size_t s)
 {
 	struct ar_w *ar;
 	int ret;
 
 	ar = (struct ar_w *)a->format_data;
 	if (s > ar->entry_bytes_remaining)
-		s = ar->entry_bytes_remaining;
+		s = (size_t)ar->entry_bytes_remaining;
 
 	if (ar->is_strtab > 0) {
 		if (ar->has_strtab > 0) {
-			tk_archive_set_error(&a->archive, EINVAL,
+			archive_set_error(&a->archive, EINVAL,
 			    "More than one string tables exist");
 			return (ARCHIVE_WARN);
 		}
 
 		ar->strtab = (char *)malloc(s);
 		if (ar->strtab == NULL) {
-			tk_archive_set_error(&a->archive, ENOMEM,
+			archive_set_error(&a->archive, ENOMEM,
 			    "Can't allocate strtab buffer");
 			return (ARCHIVE_FATAL);
 		}
@@ -374,7 +385,7 @@ tk_archive_write_ar_data(struct archive_write *a, const void *buff, size_t s)
 		ar->has_strtab = 1;
 	}
 
-	ret = (a->compressor.write)(a, buff, s);
+	ret = __archive_write_output(a, buff, s);
 	if (ret != ARCHIVE_OK)
 		return (ret);
 
@@ -383,7 +394,7 @@ tk_archive_write_ar_data(struct archive_write *a, const void *buff, size_t s)
 }
 
 static int
-tk_archive_write_ar_destroy(struct archive_write *a)
+archive_write_ar_free(struct archive_write *a)
 {
 	struct ar_w *ar;
 
@@ -403,16 +414,19 @@ tk_archive_write_ar_destroy(struct archive_write *a)
 }
 
 static int
-tk_archive_write_ar_finish(struct archive_write *a)
+archive_write_ar_close(struct archive_write *a)
 {
+	struct ar_w *ar;
 	int ret;
 
 	/*
 	 * If we haven't written anything yet, we need to write
 	 * the ar global header now to make it a valid ar archive.
 	 */
-	if (a->archive.file_position == 0) {
-		ret = (a->compressor.write)(a, "!<arch>\n", 8);
+	ar = (struct ar_w *)a->format_data;
+	if (!ar->wrote_global_header) {
+		ar->wrote_global_header = 1;
+		ret = __archive_write_output(a, "!<arch>\n", 8);
 		return (ret);
 	}
 
@@ -420,7 +434,7 @@ tk_archive_write_ar_finish(struct archive_write *a)
 }
 
 static int
-tk_archive_write_ar_finish_entry(struct archive_write *a)
+archive_write_ar_finish_entry(struct archive_write *a)
 {
 	struct ar_w *ar;
 	int ret;
@@ -428,7 +442,7 @@ tk_archive_write_ar_finish_entry(struct archive_write *a)
 	ar = (struct ar_w *)a->format_data;
 
 	if (ar->entry_bytes_remaining != 0) {
-		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
 		    "Entry remaining bytes larger than 0");
 		return (ARCHIVE_WARN);
 	}
@@ -438,13 +452,13 @@ tk_archive_write_ar_finish_entry(struct archive_write *a)
 	}
 
 	if (ar->entry_padding != 1) {
-		tk_archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
-		    "Padding wrong size: %d should be 1 or 0",
-		    ar->entry_padding);
+		archive_set_error(&a->archive, ARCHIVE_ERRNO_MISC,
+		    "Padding wrong size: %ju should be 1 or 0",
+		    (uintmax_t)ar->entry_padding);
 		return (ARCHIVE_WARN);
 	}
 
-	ret = (a->compressor.write)(a, "\n", 1);
+	ret = __archive_write_output(a, "\n", 1);
 	return (ret);
 }
 
@@ -501,7 +515,7 @@ format_decimal(int64_t v, char *p, int s)
 	len = s;
 	h = p;
 
-	/* Negative values in ar header are meaningless , so use 0. */
+	/* Negative values in ar header are meaningless, so use 0. */
 	if (v < 0) {
 		while (len-- > 0)
 			*p++ = '0';

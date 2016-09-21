@@ -70,7 +70,7 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_entry_xattr.c 201096 2009-12-28 
  */
 
 void
-tk_archive_entry_xattr_clear(struct archive_entry *entry)
+archive_entry_xattr_clear(struct archive_entry *entry)
 {
 	struct ae_xattr	*xp;
 
@@ -86,19 +86,17 @@ tk_archive_entry_xattr_clear(struct archive_entry *entry)
 }
 
 void
-tk_archive_entry_xattr_add_entry(struct archive_entry *entry,
+archive_entry_xattr_add_entry(struct archive_entry *entry,
 	const char *name, const void *value, size_t size)
 {
 	struct ae_xattr	*xp;
 
-	for (xp = entry->xattr_head; xp != NULL; xp = xp->next)
-		;
-
 	if ((xp = (struct ae_xattr *)malloc(sizeof(struct ae_xattr))) == NULL)
-		/* XXX Error XXX */
-		return;
+		__archive_errx(1, "Out of memory");
 
-	xp->name = strdup(name);
+	if ((xp->name = strdup(name)) == NULL)
+		__archive_errx(1, "Out of memory");
+
 	if ((xp->value = malloc(size)) != NULL) {
 		memcpy(xp->value, value, size);
 		xp->size = size;
@@ -114,7 +112,7 @@ tk_archive_entry_xattr_add_entry(struct archive_entry *entry,
  * returns number of the extended attribute entries
  */
 int
-tk_archive_entry_xattr_count(struct archive_entry *entry)
+archive_entry_xattr_count(struct archive_entry *entry)
 {
 	struct ae_xattr *xp;
 	int count = 0;
@@ -126,15 +124,15 @@ tk_archive_entry_xattr_count(struct archive_entry *entry)
 }
 
 int
-tk_archive_entry_xattr_reset(struct archive_entry * entry)
+archive_entry_xattr_reset(struct archive_entry * entry)
 {
 	entry->xattr_p = entry->xattr_head;
 
-	return tk_archive_entry_xattr_count(entry);
+	return archive_entry_xattr_count(entry);
 }
 
 int
-tk_archive_entry_xattr_next(struct archive_entry * entry,
+archive_entry_xattr_next(struct archive_entry * entry,
 	const char **name, const void **value, size_t *size)
 {
 	if (entry->xattr_p) {

@@ -59,25 +59,21 @@ struct read_FILE_data {
 
 static int	file_close(struct archive *, void *);
 static ssize_t	file_read(struct archive *, void *, const void **buff);
-#if ARCHIVE_API_VERSION < 2
-static ssize_t	file_skip(struct archive *, void *, size_t request);
-#else
-static off_t	file_skip(struct archive *, void *, off_t request);
-#endif
+static int64_t	file_skip(struct archive *, void *, int64_t request);
 
 int
-tk_archive_read_open_FILE(struct archive *a, FILE *f)
+archive_read_open_FILE(struct archive *a, FILE *f)
 {
 	struct stat st;
 	struct read_FILE_data *mine;
 	size_t block_size = 128 * 1024;
 	void *b;
 
-	tk_archive_clear_error(a);
+	archive_clear_error(a);
 	mine = (struct read_FILE_data *)malloc(sizeof(*mine));
 	b = malloc(block_size);
 	if (mine == NULL || b == NULL) {
-		tk_archive_set_error(a, ENOMEM, "No memory");
+		archive_set_error(a, ENOMEM, "No memory");
 		free(mine);
 		free(b);
 		return (ARCHIVE_FATAL);
@@ -87,11 +83,12 @@ tk_archive_read_open_FILE(struct archive *a, FILE *f)
 	mine->f = f;
 	/*
 	 * If we can't fstat() the file, it may just be that it's not
-	 * a file.  (FILE * objects can wrap many kinds of I/O
-	 * streams, some of which don't support fileno()).)
+	 * a file.  (On some platforms, FILE * objects can wrap I/O
+	 * streams that don't support fileno()).  As a result, fileno()
+	 * should be used cautiously.)
 	 */
 	if (fstat(fileno(mine->f), &st) == 0 && S_ISREG(st.st_mode)) {
-		tk_archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
+		archive_read_extract_set_skip_file(a, st.st_dev, st.st_ino);
 		/* Enable the seek optimization only for regular files. */
 		mine->can_skip = 1;
 	} else
@@ -101,33 +98,39 @@ tk_archive_read_open_FILE(struct archive *a, FILE *f)
 	setmode(fileno(mine->f), O_BINARY);
 #endif
 
-	return (tk_archive_read_open2(a, mine, NULL, file_read,
-		    file_skip, file_close));
+	archive_read_set_read_callback(a, file_read);
+	archive_read_set_skip_callback(a, file_skip);
+	archive_read_set_close_callback(a, file_close);
+	archive_read_set_callback_data(a, mine);
+	return (archive_read_open1(a));
 }
 
 static ssize_t
 file_read(struct archive *a, void *client_data, const void **buff)
 {
 	struct read_FILE_data *mine = (struct read_FILE_data *)client_data;
-	ssize_t bytes_read;
+	size_t bytes_read;
 
 	*buff = mine->buffer;
 	bytes_read = fread(mine->buffer, 1, mine->block_size, mine->f);
-	if (bytes_read < 0) {
-		tk_archive_set_error(a, errno, "Error reading file");
+	if (bytes_read < mine->block_size && ferror(mine->f)) {
+		archive_set_error(a, errno, "Error reading file");
 	}
 	return (bytes_read);
 }
 
-#if ARCHIVE_API_VERSION < 2
-static ssize_t
-file_skip(struct archive *a, void *client_data, size_t request)
-#else
-static off_t
-file_skip(struct archive *a, void *client_data, off_t request)
-#endif
+static int64_t
+file_skip(struct archive *a, void *client_data, int64_t request)
 {
 	struct read_FILE_data *mine = (struct read_FILE_data *)client_data;
+#if HAVE_FSEEKO
+	off_t skip = (off_t)request;
+#elif HAVE__FSEEKI64
+	int64_t skip = request;
+#else
+	long skip = (long)request;
+#endif
+	int skip_bits = sizeof(skip) * 8 - 1;
 
 	(void)a; /* UNUSED */
 
@@ -140,10 +143,23 @@ file_skip(struct archive *a, void *client_data, off_t request)
 	if (request == 0)
 		return (0);
 
-#if HAVE_FSEEKO
-	if (fseeko(mine->f, request, SEEK_CUR) != 0)
+	/* If request is too big for a long or an off_t, reduce it. */
+	if (sizeof(request) > sizeof(skip)) {
+		int64_t max_skip =
+		    (((int64_t)1 << (skip_bits - 1)) - 1) * 2 + 1;
+		if (request > max_skip)
+			skip = max_skip;
+	}
+
+#ifdef __ANDROID__
+        /* fileno() isn't safe on all platforms ... see above. */
+	if (lseek(fileno(mine->f), skip, SEEK_CUR) < 0)
+#elif HAVE_FSEEKO
+	if (fseeko(mine->f, skip, SEEK_CUR) != 0)
+#elif HAVE__FSEEKI64
+	if (_fseeki64(mine->f, skip, SEEK_CUR) != 0)
 #else
-	if (fseek(mine->f, request, SEEK_CUR) != 0)
+	if (fseek(mine->f, skip, SEEK_CUR) != 0)
 #endif
 	{
 		mine->can_skip = 0;

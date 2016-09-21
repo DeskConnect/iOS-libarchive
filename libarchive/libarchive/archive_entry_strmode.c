@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD: src/lib/libarchive/archive_entry_strmode.c,v 1.4 2008/06/15 
 #include "archive_entry_private.h"
 
 const char *
-tk_archive_entry_strmode(struct archive_entry *entry)
+archive_entry_strmode(struct archive_entry *entry)
 {
 	static const mode_t permbits[] =
 	    { 0400, 0200, 0100, 0040, 0020, 0010, 0004, 0002, 0001 };
@@ -48,8 +48,8 @@ tk_archive_entry_strmode(struct archive_entry *entry)
 	/* Fill in a default string, then selectively override. */
 	strcpy(bp, "?rwxrwxrwx ");
 
-	mode = tk_archive_entry_mode(entry);
-	switch (tk_archive_entry_filetype(entry)) {
+	mode = archive_entry_mode(entry);
+	switch (archive_entry_filetype(entry)) {
 	case AE_IFREG:  bp[0] = '-'; break;
 	case AE_IFBLK:  bp[0] = 'b'; break;
 	case AE_IFCHR:  bp[0] = 'c'; break;
@@ -58,7 +58,7 @@ tk_archive_entry_strmode(struct archive_entry *entry)
 	case AE_IFSOCK: bp[0] = 's'; break;
 	case AE_IFIFO:  bp[0] = 'p'; break;
 	default:
-		if (tk_archive_entry_hardlink(entry) != NULL) {
+		if (archive_entry_hardlink(entry) != NULL) {
 			bp[0] = 'h';
 			break;
 		}
@@ -80,7 +80,7 @@ tk_archive_entry_strmode(struct archive_entry *entry)
 		if (mode & 0001) bp[9] = 't';
 		else bp[9] = 'T';
 	}
-	if (tk_archive_entry_acl_count(entry, ARCHIVE_ENTRY_ACL_TYPE_ACCESS))
+	if (archive_entry_acl_count(entry, ARCHIVE_ENTRY_ACL_TYPE_ACCESS))
 		bp[10] = '+';
 
 	return (bp);

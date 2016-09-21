@@ -34,7 +34,7 @@ __FBSDID("$FreeBSD$");
 #define EPOC_TIME ARCHIVE_LITERAL_ULL(116444736000000000)
 
 __inline static void
-fileTimeToUtc(const FILETIME *filetime, time_t *time, long *ns)
+fileTimeToUtc(const FILETIME *filetime, time_t *t, long *ns)
 {
 	ULARGE_INTEGER utc;
 
@@ -42,33 +42,34 @@ fileTimeToUtc(const FILETIME *filetime, time_t *time, long *ns)
 	utc.LowPart  = filetime->dwLowDateTime;
 	if (utc.QuadPart >= EPOC_TIME) {
 		utc.QuadPart -= EPOC_TIME;
-		*time = (time_t)(utc.QuadPart / 10000000);	/* milli seconds base */
+		*t = (time_t)(utc.QuadPart / 10000000);	/* milli seconds base */
 		*ns = (long)(utc.QuadPart % 10000000) * 100;/* nano seconds base */
 	} else {
-		*time = 0;
+		*t = 0;
 		*ns = 0;
 	}
 }
 
 void
-tk_archive_entry_copy_bhfi(struct archive_entry *entry,
+archive_entry_copy_bhfi(struct archive_entry *entry,
 			BY_HANDLE_FILE_INFORMATION *bhfi)
 {
 	time_t secs;
 	long nsecs;
 
 	fileTimeToUtc(&bhfi->ftLastAccessTime, &secs, &nsecs);
-	tk_archive_entry_set_atime(entry, secs, nsecs);
+	archive_entry_set_atime(entry, secs, nsecs);
 	fileTimeToUtc(&bhfi->ftLastWriteTime, &secs, &nsecs);
-	tk_archive_entry_set_mtime(entry, secs, nsecs);
+	archive_entry_set_mtime(entry, secs, nsecs);
 	fileTimeToUtc(&bhfi->ftCreationTime, &secs, &nsecs);
-	tk_archive_entry_set_birthtime(entry, secs, nsecs);
-	tk_archive_entry_set_dev(entry, bhfi->dwVolumeSerialNumber);
-	tk_archive_entry_set_ino64(entry, (((int64_t)bhfi->nFileIndexHigh) << 32)
+	archive_entry_set_birthtime(entry, secs, nsecs);
+	archive_entry_set_ctime(entry, secs, nsecs);
+	archive_entry_set_dev(entry, bhfi->dwVolumeSerialNumber);
+	archive_entry_set_ino64(entry, (((int64_t)bhfi->nFileIndexHigh) << 32)
 		+ bhfi->nFileIndexLow);
-	tk_archive_entry_set_nlink(entry, bhfi->nNumberOfLinks);
-	tk_archive_entry_set_size(entry, (((int64_t)bhfi->nFileSizeHigh) << 32)
+	archive_entry_set_nlink(entry, bhfi->nNumberOfLinks);
+	archive_entry_set_size(entry, (((int64_t)bhfi->nFileSizeHigh) << 32)
 		+ bhfi->nFileSizeLow);
-//	tk_archive_entry_set_mode(entry, st->st_mode);
+	/* archive_entry_set_mode(entry, st->st_mode); */
 }
 #endif
