@@ -396,6 +396,9 @@ child_read(struct archive_read_filter *self, char *buf, size_t buf_len)
 int
 __archive_read_program(struct archive_read_filter *self, const char *cmd)
 {
+#if TARGET_OS_WATCH || TARGET_OS_TV
+    return (ARCHIVE_FATAL);
+#else
 	struct program_filter	*state;
 	static const size_t out_buf_len = 65536;
 	char *out_buf;
@@ -458,6 +461,7 @@ __archive_read_program(struct archive_read_filter *self, const char *cmd)
 
 	/* XXX Check that we can read at least one byte? */
 	return (ARCHIVE_OK);
+#endif
 }
 
 static int
