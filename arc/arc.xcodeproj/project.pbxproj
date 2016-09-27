@@ -1788,6 +1788,10 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = arc_Prefix.pch;
 				INSTALL_PATH = /usr/local/lib;
+				OTHER_CFLAGS = (
+					"-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"",
+					"-fembed-bitcode",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1803,6 +1807,10 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = arc_Prefix.pch;
 				INSTALL_PATH = /usr/local/lib;
+				OTHER_CFLAGS = (
+					"-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"",
+					"-fembed-bitcode",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1856,6 +1864,10 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = arc_Prefix.pch;
 				INSTALL_PATH = /usr/local/lib;
+				OTHER_CFLAGS = (
+					"-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"",
+					"-fembed-bitcode",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
@@ -1872,6 +1884,10 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = arc_Prefix.pch;
 				INSTALL_PATH = /usr/local/lib;
+				OTHER_CFLAGS = (
+					"-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"",
+					"-fembed-bitcode",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
@@ -1891,6 +1907,10 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = arc_Prefix.pch;
 				INSTALL_PATH = /usr/local/lib;
+				OTHER_CFLAGS = (
+					"-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"",
+					"-fembed-bitcode",
+				);
 				PRODUCT_NAME = "archive-ios";
 				SKIP_INSTALL = YES;
 			};
@@ -1905,6 +1925,10 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = arc_Prefix.pch;
 				INSTALL_PATH = /usr/local/lib;
+				OTHER_CFLAGS = (
+					"-DPLATFORM_CONFIG_H=\\\"libarchive_custom_config.h\\\"",
+					"-fembed-bitcode",
+				);
 				PRODUCT_NAME = "archive-ios";
 				SKIP_INSTALL = YES;
 			};
