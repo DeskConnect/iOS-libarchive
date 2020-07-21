@@ -23,10 +23,10 @@ object can be found in the overview manual page for
 [[ManPageibarchive3]]. 
 == SEE ALSO == 
 [[ManPageBsdtar1]], 
-[[ManPageibarchive3]], 
 [[ManPagerchiveeadata3]], 
 [[ManPagerchiveeadilter3]], 
 [[ManPagerchiveeadormat3]], 
 [[ManPagerchiveeadetptions3]], 
 [[ManPagerchivetil3]], 
+[[ManPageibarchive3]], 
 [[ManPageTar5]] 

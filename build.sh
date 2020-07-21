@@ -1,22 +1,27 @@
 #!/bin/sh
 
-IPHONE_SDK_VERSION=10.0
-TV_SDK_VERSION=$IPHONE_SDK_VERSION
-MAC_SDK_VERSION=10.12
-WATCH_SDK_VERSION=3.0
-
 cd arc
-xcodebuild -sdk iphoneos -target archive-ios clean build
+mkdir lib
+
 xcodebuild -sdk iphonesimulator -target archive-ios clean build
-lipo -output build/libarchive-ios.a -create build/Release-iphoneos/libarchive-ios.a build/Release-iphonesimulator/libarchive-ios.a
+mv lib/libarchive-ios.a lib/libarchive-iossimulator.a
+xcodebuild -sdk iphoneos -target archive-ios clean build
+lipo -output lib/libarchive-ios.a -create lib/libarchive-ios.a lib/libarchive-iossimulator.a
 
-xcodebuild -sdk watchos -target archive-watch clean build
+rm lib/libarchive-iossimulator.a
+
 xcodebuild -sdk watchsimulator -target archive-watch clean build
-lipo -output build/libarchive-watch.a -create build/Release-watchos/libarchive-watch.a build/Release-watchsimulator/libarchive-watch.a
+mv lib/libarchive-watch.a lib/libarchive-watchsimulator.a
+xcodebuild -sdk watchos -target archive-watch clean build
+lipo -output lib/libarchive-watch.a -create lib/libarchive-watch.a lib/libarchive-watchsimulator.a
 
-xcodebuild -sdk appletvos -target archive-tv clean build
+rm lib/libarchive-watchsimulator.a
+
 xcodebuild -sdk appletvsimulator -target archive-tv clean build
-lipo -output build/libarchive-tv.a -create build/Release-appletvos/libarchive-tv.a build/Release-appletvsimulator/libarchive-tv.a
+mv lib/libarchive-tv.a lib/libarchive-appletvsimulator.a
+xcodebuild -sdk appletvos -target archive-tv clean build
+lipo -output lib/libarchive-tv.a -create lib/libarchive-tv.a lib/libarchive-appletvsimulator.a
+
+rm lib/libarchive-appletvsimulator.a
 
 xcodebuild -target archive-mac clean build
-cp build/Release/libarchive-mac.a build/libarchive-mac.a

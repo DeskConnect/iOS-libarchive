@@ -16,7 +16,7 @@ Leading whitespace is always ignored.
 
 When encoding file or pathnames, any backslash character or 
 character outside of the 95 printable ASCII characters must be 
-encoded as a a backslash followed by three 
+encoded as a backslash followed by three 
 octal digits. 
 When reading mtree files, any appearance of a backslash 
 followed by three octal digits should be converted into the 
@@ -101,7 +101,6 @@ or
 .B char 
 file types. 
 The value must be one of the following forms: 
-
 <dl> 
 <dt>''format'',''major'',''minor''Bo,''subunit'' Bc</dt><dd> 
 A device with 
@@ -133,8 +132,8 @@ are recognized:
 .B solaris , 
 .B sunos , 
 .B svr3 , 
-.B svr4 ,  
-and  
+.B svr4 , 
+and 
 .B ultrix . 
 
 See 
@@ -256,12 +255,10 @@ The file owner as a numeric value.
 </dd><dt>'''uname'''</dt><dd> 
 The file owner as a symbolic name. 
 </dd></dl> 
-
 == SEE ALSO == 
 [[cksum(1)|http://www.freebsd.org/cgi/man.cgi?query=cksum&sektion=1]], 
 [[find(1)|http://www.freebsd.org/cgi/man.cgi?query=find&sektion=1]], 
 [[mtree(8)|http://www.freebsd.org/cgi/man.cgi?query=mtree&sektion=8]] 
-== BUGS == 
 == HISTORY == 
 The 
 '''mtree''' 

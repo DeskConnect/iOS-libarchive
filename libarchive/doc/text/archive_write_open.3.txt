@@ -2,7 +2,7 @@ ARCHIVE_WRITE_OPEN(3)	 BSD Library Functions Manual	 ARCHIVE_WRITE_OPEN(3)
 
 NAME
      archive_write_open, archive_write_open_fd, archive_write_open_FILE,
-     archive_write_open_filename, archive_write_open_memory — functions for
+     archive_write_open_filename, archive_write_open_memory -- functions for
      creating archives
 
 LIBRARY
@@ -34,8 +34,8 @@ DESCRIPTION
 	     Freeze the settings, open the archive, and prepare for writing
 	     entries.  This is the most generic form of this function, which
 	     accepts pointers to three callback functions which will be
-	     invoked by the compression layer to write the constructed ar‐
-	     chive.
+	     invoked by the compression layer to write the constructed ar-
+	     chive.  This does not alter the default archive padding.
 
      archive_write_open_fd()
 	     A convenience form of archive_write_open() that accepts a file
@@ -52,10 +52,10 @@ DESCRIPTION
 	     A deprecated synonym for archive_write_open_filename().
 
      archive_write_open_filename()
-	     A convenience form of archive_write_open() that accepts a file‐
-	     name.  A NULL argument indicates that the output should be writ‐
-	     ten to standard output; an argument of “-” will open a file with
-	     that name.  If you have not invoked
+	     A convenience form of archive_write_open() that accepts a file-
+	     name.  A NULL argument indicates that the output should be writ-
+	     ten to standard output; an argument of ``-'' will open a file
+	     with that name.  If you have not invoked
 	     archive_write_set_bytes_in_last_block(), then
 	     archive_write_open_filename() will adjust the last-block padding
 	     depending on the file: it will enable padding when writing to
@@ -70,13 +70,18 @@ DESCRIPTION
 	     to a block of memory that will receive the archive.  The final
 	     size_t * argument points to a variable that will be updated after
 	     each write to reflect how much of the buffer is currently in use.
-	     You should be careful to ensure that this variable remains allo‐
-	     cated until after the archive is closed.
+	     You should be careful to ensure that this variable remains allo-
+	     cated until after the archive is closed.  This function will dis-
+	     able padding unless you have specifically set the block size.
      More information about the struct archive object and the overall design
      of the library can be found in the libarchive(3) overview.
 
+     Note that the convenience forms above vary in how they block the output.
+     See archive_write_blocksize(3) if you need to control the block size used
+     for writes or the end-of-file padding behavior.
+
 CLIENT CALLBACKS
-     To use this library, you will need to define and register callback func‐
+     To use this library, you will need to define and register callback func-
      tions that will be invoked to write data to the resulting archive.  These
      functions are registered by calling archive_write_open():
 
@@ -92,7 +97,7 @@ CLIENT CALLBACKS
 	   void *client_data, const void *buffer, size_t length)
 
      The write callback is invoked whenever the library needs to write raw
-     bytes to the archive.  For correct blocking, each call to the write call‐
+     bytes to the archive.  For correct blocking, each call to the write call-
      back function should translate into a single write(2) system call.  This
      is especially critical when writing archives to tape drives.  On success,
      the write callback should return the number of bytes actually written.
@@ -102,7 +107,7 @@ CLIENT CALLBACKS
 	   typedef int archive_close_callback(struct archive *, void
 	   *client_data)
 
-     The close callback is invoked by archive_close when the archive process‐
+     The close callback is invoked by archive_close when the archive process-
      ing is complete.  The callback should return ARCHIVE_OK on success.  On
      failure, the callback should invoke archive_set_error() to register an
      error code and message and return ARCHIVE_FATAL.
@@ -123,8 +128,8 @@ ERRORS
      archive_errno() and archive_error_string() functions.
 
 SEE ALSO
-     tar(1), libarchive(3), archive_write(3), archive_write_filter(3),
-     archive_write_format(3), archive_write_new(3),
-     archive_write_set_options(3), cpio(5), mtree(5), tar(5)
+     tar(1), archive_write(3), archive_write_blocksize(3),
+     archive_write_filter(3), archive_write_format(3), archive_write_new(3),
+     archive_write_set_options(3), libarchive(3), cpio(5), mtree(5), tar(5)
 
 BSD			       February 2, 2012 			   BSD

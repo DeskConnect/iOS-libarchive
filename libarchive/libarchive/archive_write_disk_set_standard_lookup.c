@@ -84,15 +84,13 @@ static void	cleanup(void *);
 int
 archive_write_disk_set_standard_lookup(struct archive *a)
 {
-	struct bucket *ucache = malloc(cache_size * sizeof(struct bucket));
-	struct bucket *gcache = malloc(cache_size * sizeof(struct bucket));
+	struct bucket *ucache = calloc(cache_size, sizeof(struct bucket));
+	struct bucket *gcache = calloc(cache_size, sizeof(struct bucket));
 	if (ucache == NULL || gcache == NULL) {
 		free(ucache);
 		free(gcache);
 		return (ARCHIVE_FATAL);
 	}
-	memset(ucache, 0, cache_size * sizeof(struct bucket));
-	memset(gcache, 0, cache_size * sizeof(struct bucket));
 	archive_write_disk_set_group_lookup(a, gcache, lookup_gid, cleanup);
 	archive_write_disk_set_user_lookup(a, ucache, lookup_uid, cleanup);
 	return (ARCHIVE_OK);
@@ -116,8 +114,7 @@ lookup_gid(void *private_data, const char *gname, int64_t gid)
 		return ((gid_t)b->id);
 
 	/* Free the cache slot for a new entry. */
-	if (b->name != NULL)
-		free(b->name);
+	free(b->name);
 	b->name = strdup(gname);
 	/* Note: If strdup fails, that's okay; we just won't cache. */
 	b->hash = h;
@@ -186,8 +183,7 @@ lookup_uid(void *private_data, const char *uname, int64_t uid)
 		return ((uid_t)b->id);
 
 	/* Free the cache slot for a new entry. */
-	if (b->name != NULL)
-		free(b->name);
+	free(b->name);
 	b->name = strdup(uname);
 	/* Note: If strdup fails, that's okay; we just won't cache. */
 	b->hash = h;

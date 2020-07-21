@@ -120,7 +120,7 @@ should call
 to close the archive, then call 
 '''archive_read_free'''() 
 to release all resources, including all memory allocated by the library. 
-== EXAMPLE == 
+== EXAMPLES == 
 The following illustrates basic usage of the library. 
 In this example, 
 the callback functions are simply wrappers around the standard 
@@ -174,16 +174,16 @@ myclose(struct archive *a, void *client_data)
 ```
 == SEE ALSO == 
 [[ManPageBsdtar1]], 
-[[ManPageibarchive3]], 
-[[ManPagerchiveeadew3]], 
 [[ManPagerchiveeadata3]], 
 [[ManPagerchiveeadxtract3]], 
 [[ManPagerchiveeadilter3]], 
 [[ManPagerchiveeadormat3]], 
 [[ManPagerchiveeadeader3]], 
+[[ManPagerchiveeadew3]], 
 [[ManPagerchiveeadpen3]], 
 [[ManPagerchiveeadetptions3]], 
 [[ManPagerchivetil3]], 
+[[ManPageibarchive3]], 
 [[ManPageTar5]] 
 == HISTORY == 
 The 

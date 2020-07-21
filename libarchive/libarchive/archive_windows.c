@@ -445,7 +445,8 @@ fileTimeToUTC(const FILETIME *filetime, time_t *t, long *ns)
  * Windows' stat() does not accept the path added "\\?\" especially "?"
  * character.
  * It means we cannot access the long name path longer than MAX_PATH.
- * So I've implemented simular Windows' stat() to access the long name path.
+ * So I've implemented a function similar to Windows' stat() to access the
+ * long name path.
  * And I've added some feature.
  * 1. set st_ino by nFileIndexHigh and nFileIndexLow of
  *    BY_HANDLE_FILE_INFORMATION.
@@ -766,7 +767,7 @@ __la_win_entry_in_posix_pathseparator(struct archive_entry *entry)
 			has_backslash = 1;
 	}
 	/*
-	 * If there is no backslach chars, return the original.
+	 * If there is no backslash chars, return the original.
 	 */
 	if (!has_backslash)
 		return (entry);
@@ -891,7 +892,7 @@ __la_dosmaperr(unsigned long e)
 		return;
 	}
 
-	for (i = 0; i < (int)sizeof(doserrors); i++)
+	for (i = 0; i < (int)(sizeof(doserrors)/sizeof(doserrors[0])); i++)
 	{
 		if (doserrors[i].winerr == e)
 		{

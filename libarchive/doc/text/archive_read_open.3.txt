@@ -3,7 +3,7 @@ ARCHIVE_READ_OPEN(3)	 BSD Library Functions Manual	  ARCHIVE_READ_OPEN(3)
 NAME
      archive_read_open, archive_read_open2, archive_read_open_fd,
      archive_read_open_FILE, archive_read_open_filename,
-     archive_read_open_memory, — functions for reading streaming archives
+     archive_read_open_memory -- functions for reading streaming archives
 
 LIBRARY
      Streaming Archive Library (libarchive, -larchive)
@@ -32,7 +32,8 @@ SYNOPSIS
 	 size_t block_size);
 
      int
-     archive_read_open_memory(struct archive *, void *buff, size_t size);
+     archive_read_open_memory(struct archive *, const void *buff,
+	 size_t size);
 
 DESCRIPTION
      archive_read_open()
@@ -51,7 +52,7 @@ DESCRIPTION
 	     pointer.  This function should not be used with tape drives or
 	     other devices that require strict I/O blocking.
      archive_read_open_fd()
-	     Like archive_read_open(), except that it accepts a file descrip‐
+	     Like archive_read_open(), except that it accepts a file descrip-
 	     tor and block size rather than a set of function pointers.  Note
 	     that the file descriptor will not be automatically closed at end-
 	     of-archive.  This function is safe for use with tape drives or
@@ -59,7 +60,7 @@ DESCRIPTION
      archive_read_open_file()
 	     This is a deprecated synonym for archive_read_open_filename().
      archive_read_open_filename()
-	     Like archive_read_open(), except that it accepts a simple file‐
+	     Like archive_read_open(), except that it accepts a simple file-
 	     name and a block size.  A NULL filename represents standard
 	     input.  This function is safe for use with tape drives or other
 	     blocked devices.
@@ -109,7 +110,7 @@ CLIENT CALLBACKS
      gains when reading uncompressed archives from slow disk drives or other
      media that can skip quickly.
 
-     The close callback is invoked by archive_close when the archive process‐
+     The close callback is invoked by archive_close when the archive process-
      ing is complete.  The callback should return ARCHIVE_OK on success.  On
      failure, the callback should invoke archive_set_error() to register an
      error code and message and return ARCHIVE_FATAL.
@@ -122,8 +123,8 @@ ERRORS
      archive_errno() and archive_error_string() functions.
 
 SEE ALSO
-     tar(1), libarchive(3), archive_read(3), archive_read_data(3),
-     archive_read_filter(3), archive_read_format(3),
-     archive_read_set_options(3), archive_util(3), tar(5)
+     tar(1), archive_read(3), archive_read_data(3), archive_read_filter(3),
+     archive_read_format(3), archive_read_set_options(3), archive_util(3),
+     libarchive(3), tar(5)
 
 BSD			       February 2, 2012 			   BSD

@@ -58,11 +58,11 @@ and
 '''archive_error_string'''() 
 functions. 
 == SEE ALSO == 
-[[ManPageibarchive3]], 
-[[ManPagerchiveeadew3]], 
 [[ManPagerchiveeadata3]], 
 [[ManPagerchiveeadilter3]], 
 [[ManPagerchiveeadormat3]], 
+[[ManPagerchiveeadew3]], 
 [[ManPagerchiveeadpen3]], 
 [[ManPagerchiveeadetptions3]], 
-[[ManPagerchivetil3]] 
+[[ManPagerchivetil3]], 
+[[ManPageibarchive3]] 

@@ -322,8 +322,8 @@ as a dedicated ZIP program.
 [[ManPagerchiventry3]], 
 [[ManPagerchiveead3]], 
 [[ManPagerchiverite3]], 
-[[ManPagerchiveriteisk3]] 
-[[ManPageibarchive3]], 
+[[ManPagerchiveriteisk3]], 
+[[ManPageibarchive3]] 
 == HISTORY == 
 The 
 '''libarchive''' 

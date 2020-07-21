@@ -3,7 +3,7 @@ ARCHIVE_ENTRY_LINKIFY(3) BSD Library Functions Manual ARCHIVE_ENTRY_LINKIFY(3)
 NAME
      archive_entry_linkresolver, archive_entry_linkresolver_new,
      archive_entry_linkresolver_set_strategy, archive_entry_linkresolver_free,
-     archive_entry_linkify — hardlink resolver functions
+     archive_entry_linkify -- hardlink resolver functions
 
 LIBRARY
      Streaming Archive Library (libarchive, -larchive)
@@ -43,7 +43,7 @@ DESCRIPTION
      The archive_entry_linkresolver functions assume that archive_entry
      instances have valid nlinks, inode and device values.  The inode and
      device value is used to match entries.  The nlinks value is used to
-     determined if all references have been found and if the internal refer‐
+     determined if all references have been found and if the internal refer-
      ences can be recycled.
 
      The archive_entry_linkresolver_new() function allocates a new link
@@ -51,7 +51,7 @@ DESCRIPTION
      archive_entry_linkresolver_free().  All deferred entries are flushed and
      the internal storage is freed.
 
-     The archive_entry_linkresolver_set_strategy() function selects the opti‐
+     The archive_entry_linkresolver_set_strategy() function selects the opti-
      mal hardlink strategy for the given format.  The format code can be
      obtained from archive_format(3).  The function can be called more than
      once, but it is recommended to flush all deferred entries first.
@@ -74,8 +74,8 @@ DESCRIPTION
 	  link count reduced by one.
 
      3.   For new cpio like archive formats a value for *entry of NULL is used
-	  to flush deferred entries.  In that case *entry is set to an arbi‐
-	  trary deferred entry and the entry itself is removed from the inter‐
+	  to flush deferred entries.  In that case *entry is set to an arbi-
+	  trary deferred entry and the entry itself is removed from the inter-
 	  nal list.  If the internal list is empty, *entry is set to NULL.  In
 	  either case, *sparse is set to NULL and the function returns.  If
 	  the hardlink count of *entry is one or the file type is a directory

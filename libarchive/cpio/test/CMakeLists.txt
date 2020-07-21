@@ -8,7 +8,7 @@ IF(ENABLE_CPIO AND ENABLE_TEST)
     ../cmdline.c
     ../../libarchive_fe/err.c
     ../../test_utils/test_utils.c
-    main.c
+    ../../test_utils/test_main.c
     test.h
     test_0.c
     test_basic.c
@@ -23,6 +23,7 @@ IF(ENABLE_CPIO AND ENABLE_TEST)
     test_extract_cpio_lzma
     test_extract_cpio_lzo
     test_extract_cpio_xz
+    test_extract_cpio_zstd
     test_format_newc.c
     test_gcpio_compat.c
     test_missing_file.c
@@ -53,6 +54,7 @@ IF(ENABLE_CPIO AND ENABLE_TEST)
     test_option_xz.c
     test_option_y.c
     test_option_z.c
+    test_option_zstd.c
     test_owner_parse.c
     test_passthrough_dotdot.c
     test_passthrough_reverse.c
@@ -62,6 +64,16 @@ IF(ENABLE_CPIO AND ENABLE_TEST)
   # Register target
   #
   ADD_EXECUTABLE(bsdcpio_test ${bsdcpio_test_SOURCES})
+  IF(ENABLE_ACL)
+    SET(TEST_ACL_LIBS "")
+    IF(HAVE_LIBACL)
+      LIST(APPEND TEST_ACL_LIBS ${ACL_LIBRARY})
+    ENDIF(HAVE_LIBACL)
+    IF(HAVE_LIBRICHACL)
+      LIST(APPEND TEST_ACL_LIBS ${RICHACL_LIBRARY})
+    ENDIF(HAVE_LIBRICHACL)
+    TARGET_LINK_LIBRARIES(bsdcpio_test ${TEST_ACL_LIBS})
+  ENDIF(ENABLE_ACL)
   SET_PROPERTY(TARGET bsdcpio_test PROPERTY COMPILE_DEFINITIONS LIST_H)
 
   #
@@ -87,11 +99,13 @@ IF(ENABLE_CPIO AND ENABLE_TEST)
   INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/list.h)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/test_utils)
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/cpio/test)
 
   # Experimental new test handling
   ADD_CUSTOM_TARGET(run_bsdcpio_test
 	COMMAND	bsdcpio_test -p $<TARGET_FILE:bsdcpio>
-			     -r ${CMAKE_CURRENT_SOURCE_DIR})
+			     -r ${CMAKE_CURRENT_SOURCE_DIR}
+			     -vv)
   ADD_DEPENDENCIES(run_bsdcpio_test bsdcpio)
   ADD_DEPENDENCIES(run_all_tests run_bsdcpio_test)
 ENDIF(ENABLE_CPIO AND ENABLE_TEST)
