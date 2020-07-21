@@ -43,6 +43,7 @@ __FBSDID("$FreeBSD: head/lib/libarchive/archive_write_set_format_cpio.c 201170 2
 #include "archive_entry_locale.h"
 #include "archive_private.h"
 #include "archive_write_private.h"
+#include "archive_write_set_format_private.h"
 
 static ssize_t	archive_write_cpio_data(struct archive_write *,
 		    const void *buff, size_t s);
@@ -289,7 +290,7 @@ write_header(struct archive_write *a, struct archive_entry *entry)
 	sconv = get_sconv(a);
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-	/* Make sure the path separators in pahtname, hardlink and symlink
+	/* Make sure the path separators in pathname, hardlink and symlink
 	 * are all slash '/', not the Windows path separator '\'. */
 	entry_main = __la_win_entry_in_posix_pathseparator(entry);
 	if (entry_main == NULL) {
@@ -408,8 +409,7 @@ write_header(struct archive_write *a, struct archive_entry *entry)
 		}
 	}
 exit_write_header:
-	if (entry_main)
-		archive_entry_free(entry_main);
+	archive_entry_free(entry_main);
 	return (ret_final);
 }
 

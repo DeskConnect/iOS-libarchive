@@ -23,9 +23,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*	$OpenBSD: readpassphrase.c,v 1.22 2010/01/13 10:20:54 dtucker Exp $	*/
+/*	$OpenBSD: readpassphrase.c,v 1.27 2019/01/25 00:19:25 millert Exp $	*/
+
 /*
- * Copyright (c) 2000-2002, 2007 Todd C. Miller <Todd.Miller@courtesan.com>
+ * Copyright (c) 2000-2002, 2007, 2010
+ * 	Todd C. Miller <millert@openbsd.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -121,15 +123,20 @@ readpassphrase(const char *prompt, char *buf, size_t bufsiz, int flags)
 
 #else /* _WIN32 && !__CYGWIN__ */
 
-#include <termios.h>
-#include <signal.h>
+#include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
+#include <signal.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
+
+#ifndef _PATH_TTY
+#define _PATH_TTY "/dev/tty"
+#endif
 
 #ifdef TCSASOFT
 # define _T_FLUSH	(TCSAFLUSH|TCSASOFT)
@@ -142,11 +149,18 @@ readpassphrase(const char *prompt, char *buf, size_t bufsiz, int flags)
 #  define _POSIX_VDISABLE       VDISABLE
 #endif
 
-static volatile sig_atomic_t *signo;
+#define M(a,b) (a > b ? a : b)
+#define MAX_SIGNO M(M(M(SIGALRM, SIGHUP), \
+                      M(SIGINT, SIGPIPE)), \
+                    M(M(SIGQUIT, SIGTERM), \
+                      M(M(SIGTSTP, SIGTTIN), SIGTTOU)))
+
+static volatile sig_atomic_t signo[MAX_SIGNO + 1];
 
 static void
 handler(int s)
 {
+	assert(s <= MAX_SIGNO);
 	signo[s] = 1;
 }
 
@@ -166,12 +180,8 @@ readpassphrase(const char *prompt, char *buf, size_t bufsiz, int flags)
 		return(NULL);
 	}
 
-	if (signo == NULL) {
-		signo = calloc(SIGRTMAX, sizeof(sig_atomic_t));
-	}
-
 restart:
-	for (i = 0; i < SIGRTMAX; i++)
+	for (i = 0; i <= MAX_SIGNO; i++)
 		signo[i] = 0;
 	nr = -1;
 	save_errno = 0;
@@ -191,24 +201,10 @@ restart:
 	}
 
 	/*
-	 * Catch signals that would otherwise cause the user to end
-	 * up with echo turned off in the shell.  Don't worry about
-	 * things like SIGXCPU and SIGVTALRM for now.
+	 * Turn off echo if possible.
+	 * If we are using a tty but are not the foreground pgrp this will
+	 * generate SIGTTOU, so do it *before* installing the signal handlers.
 	 */
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;		/* don't restart system calls */
-	sa.sa_handler = handler;
-	(void)sigaction(SIGALRM, &sa, &savealrm);
-	(void)sigaction(SIGHUP, &sa, &savehup);
-	(void)sigaction(SIGINT, &sa, &saveint);
-	(void)sigaction(SIGPIPE, &sa, &savepipe);
-	(void)sigaction(SIGQUIT, &sa, &savequit);
-	(void)sigaction(SIGTERM, &sa, &saveterm);
-	(void)sigaction(SIGTSTP, &sa, &savetstp);
-	(void)sigaction(SIGTTIN, &sa, &savettin);
-	(void)sigaction(SIGTTOU, &sa, &savettou);
-
-	/* Turn off echo if possible. */
 	if (input != STDIN_FILENO && tcgetattr(input, &oterm) == 0) {
 		memcpy(&term, &oterm, sizeof(term));
 		if (!(flags & RPP_ECHO_ON))
@@ -225,40 +221,60 @@ restart:
 		oterm.c_lflag |= ECHO;
 	}
 
-	/* No I/O if we are already backgrounded. */
-	if (signo[SIGTTOU] != 1 && signo[SIGTTIN] != 1) {
-		if (!(flags & RPP_STDIN)) {
-			int r = write(output, prompt, strlen(prompt));
-			(void)r;
-		}
-		end = buf + bufsiz - 1;
-		p = buf;
-		while ((nr = read(input, &ch, 1)) == 1 && ch != '\n' && ch != '\r') {
-			if (p < end) {
-				if ((flags & RPP_SEVENBIT))
-					ch &= 0x7f;
-				if (isalpha(ch)) {
-					if ((flags & RPP_FORCELOWER))
-						ch = (char)tolower(ch);
-					if ((flags & RPP_FORCEUPPER))
-						ch = (char)toupper(ch);
-				}
-				*p++ = ch;
+	/*
+	 * Catch signals that would otherwise cause the user to end
+	 * up with echo turned off in the shell.  Don't worry about
+	 * things like SIGXCPU and SIGVTALRM for now.
+	 */
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;		/* don't restart system calls */
+	sa.sa_handler = handler;
+	/* Keep this list in sync with MAX_SIGNO! */
+	(void)sigaction(SIGALRM, &sa, &savealrm);
+	(void)sigaction(SIGHUP, &sa, &savehup);
+	(void)sigaction(SIGINT, &sa, &saveint);
+	(void)sigaction(SIGPIPE, &sa, &savepipe);
+	(void)sigaction(SIGQUIT, &sa, &savequit);
+	(void)sigaction(SIGTERM, &sa, &saveterm);
+	(void)sigaction(SIGTSTP, &sa, &savetstp);
+	(void)sigaction(SIGTTIN, &sa, &savettin);
+	(void)sigaction(SIGTTOU, &sa, &savettou);
+
+	if (!(flags & RPP_STDIN)) {
+		int r = write(output, prompt, strlen(prompt));
+		(void)r;
+	}
+	end = buf + bufsiz - 1;
+	p = buf;
+	while ((nr = read(input, &ch, 1)) == 1 && ch != '\n' && ch != '\r') {
+		if (p < end) {
+			if ((flags & RPP_SEVENBIT))
+				ch &= 0x7f;
+			if (isalpha((unsigned char)ch)) {
+				if ((flags & RPP_FORCELOWER))
+					ch = (char)tolower((unsigned char)ch);
+				if ((flags & RPP_FORCEUPPER))
+					ch = (char)toupper((unsigned char)ch);
 			}
+			*p++ = ch;
 		}
-		*p = '\0';
-		save_errno = errno;
-		if (!(term.c_lflag & ECHO)) {
-			int r = write(output, "\n", 1);
-			(void)r;
-		}
+	}
+	*p = '\0';
+	save_errno = errno;
+	if (!(term.c_lflag & ECHO)) {
+		int r = write(output, "\n", 1);
+		(void)r;
 	}
 
 	/* Restore old terminal settings and signals. */
 	if (memcmp(&term, &oterm, sizeof(term)) != 0) {
+		const int sigttou = signo[SIGTTOU];
+
+		/* Ignore SIGTTOU generated when we are not the fg pgrp. */
 		while (tcsetattr(input, _T_FLUSH, &oterm) == -1 &&
-		    errno == EINTR)
+		    errno == EINTR && !signo[SIGTTOU])
 			continue;
+		signo[SIGTTOU] = sigttou;
 	}
 	(void)sigaction(SIGALRM, &savealrm, NULL);
 	(void)sigaction(SIGHUP, &savehup, NULL);
@@ -276,7 +292,7 @@ restart:
 	 * If we were interrupted by a signal, resend it to ourselves
 	 * now that we have restored the signal handlers.
 	 */
-	for (i = 0; i < SIGRTMAX; i++) {
+	for (i = 0; i <= MAX_SIGNO; i++) {
 		if (signo[i]) {
 			kill(getpid(), i);
 			switch (i) {

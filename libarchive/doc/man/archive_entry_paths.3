@@ -6,25 +6,25 @@
 \fB\%archive_entry_set_hardlink\fP,
 \fB\%archive_entry_copy_hardlink\fP,
 \fB\%archive_entry_copy_hardlink_w\fP,
-\fB\%archve_entry_update_hardlink_utf8\fP,
+\fB\%archive_entry_update_hardlink_utf8\fP,
 \fB\%archive_entry_set_link\fP,
 \fB\%archive_entry_copy_link\fP,
 \fB\%archive_entry_copy_link_w\fP,
-\fB\%archve_entry_update_link_utf8\fP,
+\fB\%archive_entry_update_link_utf8\fP,
 \fB\%archive_entry_pathname\fP,
 \fB\%archive_entry_pathname_w\fP,
 \fB\%archive_entry_set_pathname\fP,
 \fB\%archive_entry_copy_pathname\fP,
 \fB\%archive_entry_copy_pathname_w\fP,
-\fB\%archve_entry_update_pathname_utf8\fP,
+\fB\%archive_entry_update_pathname_utf8\fP,
 \fB\%archive_entry_sourcepath\fP,
 \fB\%archive_entry_copy_sourcepath\fP,
-\fB\%archive_entry_symlink,\fP
-\fB\%archive_entry_symlink_w,\fP
+\fB\%archive_entry_symlink\fP,
+\fB\%archive_entry_symlink_w\fP,
 \fB\%archive_entry_set_symlink\fP,
 \fB\%archive_entry_copy_symlink\fP,
 \fB\%archive_entry_copy_symlink_w\fP,
-\fB\%archve_entry_update_symlink_utf8\fP
+\fB\%archive_entry_update_symlink_utf8\fP
 \- functions for manipulating path names in archive entry descriptions
 .SH LIBRARY
 .ad l
@@ -167,7 +167,7 @@ The accessor functions are named
 .TP
 UTF-8
 Unicode strings encoded as UTF-8.
-This are convience functions to update both the multibyte and wide
+These are convenience functions to update both the multibyte and wide
 character strings at the same time.
 .RE
 .PP
@@ -175,14 +175,14 @@ The sourcepath is a pure filesystem concept and never stored in an
 archive directly.
 .PP
 For that reason, it is only available as multibyte string.
-The link path is a convience function for conditionally setting
+The link path is a convenience function for conditionally setting
 hardlink or symlink destination.
 It doesn't have a corresponding get accessor function.
 .PP
 \fB\%archive_entry_set_XXX\fP()
-is an alias for 
+is an alias for
 \fB\%archive_entry_copy_XXX\fP().
 .SH SEE ALSO
 .ad l
-\fBarchive_entry\fP(3)
-\fBlibarchive\fP(3),
+\fBarchive_entry\fP(3),
+\fBlibarchive\fP(3)

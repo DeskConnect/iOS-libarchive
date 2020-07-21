@@ -23,9 +23,9 @@ object can be found in the overview manual page for
 [[ManPageibarchive3]]. 
 == SEE ALSO == 
 [[ManPageBsdtar1]], 
-[[ManPageibarchive3]], 
 [[ManPagerchiverite3]], 
 [[ManPagerchiveriteetptions3]], 
+[[ManPageibarchive3]], 
 [[ManPageCpio5]], 
 [[ManPageMtree5]], 
 [[ManPageTar5]] 

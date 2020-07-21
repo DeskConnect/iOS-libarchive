@@ -140,6 +140,7 @@ safe_fprintf(FILE *f, const char *fmt, ...)
 		} else {
 			/* Leave fmtbuff pointing to the truncated
 			 * string in fmtbuff_stack. */
+			fmtbuff = fmtbuff_stack;
 			length = sizeof(fmtbuff_stack) - 1;
 			break;
 		}
@@ -182,7 +183,7 @@ safe_fprintf(FILE *f, const char *fmt, ...)
 		}
 
 		/* If our output buffer is full, dump it and keep going. */
-		if (i > (sizeof(outbuff) - 20)) {
+		if (i > (sizeof(outbuff) - 128)) {
 			outbuff[i] = '\0';
 			fprintf(f, "%s", outbuff);
 			i = 0;
@@ -533,7 +534,7 @@ edit_pathname(struct bsdtar *bsdtar, struct archive_entry *entry)
 		}
 	}
 
-	if (!bsdtar->option_absolute_paths) {
+	if ((bsdtar->flags & OPTFLAG_ABSOLUTE_PATHS) == 0) {
 		/* By default, don't write or restore absolute pathnames. */
 		name = strip_absolute_path(bsdtar, name);
 		if (*name == '\0')
@@ -665,6 +666,14 @@ list_item_verbose(struct bsdtar *bsdtar, FILE *out, struct archive_entry *entry)
 	const char		*fmt;
 	time_t			 tim;
 	static time_t		 now;
+	struct tm		*ltime;
+#if defined(HAVE_LOCALTIME_R) || defined(HAVE__LOCALTIME64_S)
+	struct tm		tmbuf;
+#endif
+#if defined(HAVE__LOCALTIME64_S)
+	errno_t			terr;
+	__time64_t		tmptime;
+#endif
 
 	/*
 	 * We avoid collecting the entire list in memory at once by
@@ -736,7 +745,19 @@ list_item_verbose(struct bsdtar *bsdtar, FILE *out, struct archive_entry *entry)
 		fmt = bsdtar->day_first ? DAY_FMT " %b  %Y" : "%b " DAY_FMT "  %Y";
 	else
 		fmt = bsdtar->day_first ? DAY_FMT " %b %H:%M" : "%b " DAY_FMT " %H:%M";
-	strftime(tmp, sizeof(tmp), fmt, localtime(&tim));
+#if defined(HAVE_LOCALTIME_R)
+	ltime = localtime_r(&tim, &tmbuf);
+#elif defined(HAVE__LOCALTIME64_S)
+	tmptime = tim;
+	terr = _localtime64_s(&tmbuf, &tmptime);
+	if (terr)
+		ltime = NULL;
+	else
+		ltime = &tmbuf;
+#else
+	ltime = localtime(&tim);
+#endif
+	strftime(tmp, sizeof(tmp), fmt, ltime);
 	fprintf(out, " %s ", tmp);
 	safe_fprintf(out, "%s", archive_entry_pathname(entry));
 

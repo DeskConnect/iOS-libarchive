@@ -213,7 +213,7 @@ struct _7zip {
 	int			 header_is_encoded;
 	uint64_t		 header_bytes_remaining;
 	unsigned long		 header_crc32;
-	/* Header offset to check that reading pointes of the file contens
+	/* Header offset to check that reading points of the file contents
 	 * will not exceed the header. */
 	uint64_t		 header_offset;
 	/* Base offset of the archive file for a seek in case reading SFX. */
@@ -263,22 +263,22 @@ struct _7zip {
 	/*
 	 * Decompressor controllers.
 	 */
-	/* Decording LZMA1 and LZMA2 data. */
+	/* Decoding LZMA1 and LZMA2 data. */
 #ifdef HAVE_LZMA_H
 	lzma_stream		 lzstream;
 	int			 lzstream_valid;
 #endif
-	/* Decording bzip2 data. */
+	/* Decoding bzip2 data. */
 #if defined(HAVE_BZLIB_H) && defined(BZ_CONFIG_ERROR)
 	bz_stream		 bzstream;
 	int			 bzstream_valid;
 #endif
-	/* Decording deflate data. */
+	/* Decoding deflate data. */
 #ifdef HAVE_ZLIB_H
 	z_stream		 stream;
 	int			 stream_valid;
 #endif
-	/* Decording PPMd data. */
+	/* Decoding PPMd data. */
 	int			 ppmd7_stat;
 	CPpmd7			 ppmd7_context;
 	CPpmd7z_RangeDec	 range_dec;
@@ -552,7 +552,7 @@ skip_sfx(struct archive_read *a, ssize_t bytes_avail)
 	/*
 	 * If bytes_avail > SFX_MIN_ADDR we do not have to call
 	 * __archive_read_seek() at this time since we have
-	 * alredy had enough data.
+	 * already had enough data.
 	 */
 	if (bytes_avail > SFX_MIN_ADDR)
 		__archive_read_consume(a, SFX_MIN_ADDR);
@@ -760,7 +760,7 @@ archive_read_format_7zip_read_header(struct archive_read *a,
 			symsize += size;
 		}
 		if (symsize == 0) {
-			/* If there is no synname, handle it as a regular
+			/* If there is no symname, handle it as a regular
 			 * file. */
 			zip_entry->mode &= ~AE_IFMT;
 			zip_entry->mode |= AE_IFREG;
@@ -975,18 +975,6 @@ decode_codec_id(const unsigned char *codecId, size_t id_size)
 	return (id);
 }
 
-static void *
-ppmd_alloc(void *p, size_t size)
-{
-	(void)p;
-	return malloc(size);
-}
-static void
-ppmd_free(void *p, void *address)
-{
-	(void)p;
-	free(address);
-}
 static Byte
 ppmd_read(void *p)
 {
@@ -1005,8 +993,6 @@ ppmd_read(void *p)
 	zip->ppstream.total_in++;
 	return (b);
 }
-
-static ISzAlloc g_szalloc = { ppmd_alloc, ppmd_free };
 
 static int
 init_decompression(struct archive_read *a, struct _7zip *zip,
@@ -1056,10 +1042,7 @@ init_decompression(struct archive_read *a, struct _7zip *zip,
 #endif
 	{
 		lzma_options_delta delta_opt;
-		lzma_filter filters[LZMA_FILTERS_MAX];
-#if LZMA_VERSION < 50010000
-		lzma_filter *ff;
-#endif
+		lzma_filter filters[LZMA_FILTERS_MAX], *ff;
 		int fi = 0;
 
 		if (zip->lzstream_valid) {
@@ -1103,10 +1086,17 @@ init_decompression(struct archive_read *a, struct _7zip *zip,
 				zip->bcj_state = 0;
 				break;
 			case _7Z_DELTA:
+				if (coder2->propertiesSize != 1) {
+					archive_set_error(&a->archive,
+					    ARCHIVE_ERRNO_MISC,
+					    "Invalid Delta parameter");
+					return (ARCHIVE_FAILED);
+				}
 				filters[fi].id = LZMA_FILTER_DELTA;
 				memset(&delta_opt, 0, sizeof(delta_opt));
 				delta_opt.type = LZMA_DELTA_TYPE_BYTE;
-				delta_opt.dist = 1;
+				delta_opt.dist =
+				    (uint32_t)coder2->properties[0] + 1;
 				filters[fi].options = &delta_opt;
 				fi++;
 				break;
@@ -1144,9 +1134,7 @@ init_decompression(struct archive_read *a, struct _7zip *zip,
 		else
 			filters[fi].id = LZMA_FILTER_LZMA1;
 		filters[fi].options = NULL;
-#if LZMA_VERSION < 50010000
 		ff = &filters[fi];
-#endif
 		r = lzma_properties_decode(&filters[fi], NULL,
 		    coder1->properties, (size_t)coder1->propertiesSize);
 		if (r != LZMA_OK) {
@@ -1158,9 +1146,7 @@ init_decompression(struct archive_read *a, struct _7zip *zip,
 		filters[fi].id = LZMA_VLI_UNKNOWN;
 		filters[fi].options = NULL;
 		r = lzma_raw_decoder(&(zip->lzstream), filters);
-#if LZMA_VERSION < 50010000
 		free(ff->options);
-#endif
 		if (r != LZMA_OK) {
 			set_error(a, r);
 			return (ARCHIVE_FAILED);
@@ -1244,7 +1230,7 @@ init_decompression(struct archive_read *a, struct _7zip *zip,
 
 		if (zip->ppmd7_valid) {
 			__archive_ppmd7_functions.Ppmd7_Free(
-			    &zip->ppmd7_context, &g_szalloc);
+			    &zip->ppmd7_context);
 			zip->ppmd7_valid = 0;
 		}
 
@@ -1263,7 +1249,7 @@ init_decompression(struct archive_read *a, struct _7zip *zip,
 		}
 		__archive_ppmd7_functions.Ppmd7_Construct(&zip->ppmd7_context);
 		r = __archive_ppmd7_functions.Ppmd7_Alloc(
-			&zip->ppmd7_context, msize, &g_szalloc);
+			&zip->ppmd7_context, msize);
 		if (r == 0) {
 			archive_set_error(&a->archive, ENOMEM,
 			    "Coludn't allocate memory for PPMd");
@@ -1643,7 +1629,7 @@ free_decompression(struct archive_read *a, struct _7zip *zip)
 #endif
 	if (zip->ppmd7_valid) {
 		__archive_ppmd7_functions.Ppmd7_Free(
-			&zip->ppmd7_context, &g_szalloc);
+			&zip->ppmd7_context);
 		zip->ppmd7_valid = 0;
 	}
 	return (r);
@@ -1808,7 +1794,7 @@ read_PackInfo(struct archive_read *a, struct _7z_pack_info *pi)
 		return (0);
 	}
 
-	if (*p != kSize)
+	if (*p != kCRC)
 		return (-1);
 
 	if (read_Digests(a, &(pi->digest), (size_t)pi->numPackStreams) < 0)
@@ -2431,6 +2417,8 @@ read_Header(struct archive_read *a, struct _7z_header_info *h,
 
 		switch (type) {
 		case kEmptyStream:
+			if (h->emptyStreamBools != NULL)
+				return (-1);
 			h->emptyStreamBools = calloc((size_t)zip->numFiles,
 			    sizeof(*h->emptyStreamBools));
 			if (h->emptyStreamBools == NULL)
@@ -2451,6 +2439,8 @@ read_Header(struct archive_read *a, struct _7z_header_info *h,
 					return (-1);
 				break;
 			}
+			if (h->emptyFileBools != NULL)
+				return (-1);
 			h->emptyFileBools = calloc(empty_streams,
 			    sizeof(*h->emptyFileBools));
 			if (h->emptyFileBools == NULL)
@@ -2465,6 +2455,8 @@ read_Header(struct archive_read *a, struct _7z_header_info *h,
 					return (-1);
 				break;
 			}
+			if (h->antiBools != NULL)
+				return (-1);
 			h->antiBools = calloc(empty_streams,
 			    sizeof(*h->antiBools));
 			if (h->antiBools == NULL)
@@ -2491,6 +2483,8 @@ read_Header(struct archive_read *a, struct _7z_header_info *h,
 			if ((ll & 1) || ll < zip->numFiles * 4)
 				return (-1);
 
+			if (zip->entry_names != NULL)
+				return (-1);
 			zip->entry_names = malloc(ll);
 			if (zip->entry_names == NULL)
 				return (-1);
@@ -2543,6 +2537,8 @@ read_Header(struct archive_read *a, struct _7z_header_info *h,
 			if ((p = header_bytes(a, 2)) == NULL)
 				return (-1);
 			allAreDefined = *p;
+			if (h->attrBools != NULL)
+				return (-1);
 			h->attrBools = calloc((size_t)zip->numFiles,
 			    sizeof(*h->attrBools));
 			if (h->attrBools == NULL)
@@ -2566,6 +2562,7 @@ read_Header(struct archive_read *a, struct _7z_header_info *h,
 		case kDummy:
 			if (ll == 0)
 				break;
+			__LA_FALLTHROUGH;
 		default:
 			if (header_bytes(a, ll) == NULL)
 				return (-1);
@@ -2974,13 +2971,7 @@ get_uncompressed_data(struct archive_read *a, const void **buff, size_t size,
 	if (zip->codec == _7Z_COPY && zip->codec2 == (unsigned long)-1) {
 		/* Copy mode. */
 
-		/*
-		 * Note: '1' here is a performance optimization.
-		 * Recall that the decompression layer returns a count of
-		 * available bytes; asking for more than that forces the
-		 * decompressor to combine reads by copying data.
-		 */
-		*buff = __archive_read_ahead(a, 1, &bytes_avail);
+		*buff = __archive_read_ahead(a, minimum, &bytes_avail);
 		if (bytes_avail <= 0) {
 			archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_FILE_FORMAT,
@@ -3285,7 +3276,7 @@ read_stream(struct archive_read *a, const void **buff, size_t size,
 		return (r);
 
 	/*
-	 * Skip the bytes we alrady has skipped in skip_stream().
+	 * Skip the bytes we already has skipped in skip_stream().
 	 */
 	while (skip_bytes) {
 		ssize_t skipped;
@@ -3333,8 +3324,7 @@ setup_decode_folder(struct archive_read *a, struct _7z_folder *folder,
 	 * Release the memory which the previous folder used for BCJ2.
 	 */
 	for (i = 0; i < 3; i++) {
-		if (zip->sub_stream_buff[i] != NULL)
-			free(zip->sub_stream_buff[i]);
+		free(zip->sub_stream_buff[i]);
 		zip->sub_stream_buff[i] = NULL;
 	}
 
@@ -3503,7 +3493,7 @@ setup_decode_folder(struct archive_read *a, struct _7z_folder *folder,
 				return (ARCHIVE_FATAL);
 			}
 
-			/* Allocate memory for the decorded data of a sub
+			/* Allocate memory for the decoded data of a sub
 			 * stream. */
 			b[i] = malloc((size_t)zip->folder_outbytes_remaining);
 			if (b[i] == NULL) {
@@ -3588,7 +3578,7 @@ skip_stream(struct archive_read *a, size_t skip_bytes)
 	if (zip->folder_index == 0) {
 		/*
 		 * Optimization for a list mode.
-		 * Avoid unncecessary decoding operations.
+		 * Avoid unnecessary decoding operations.
 		 */
 		zip->si.ci.folders[zip->entry->folderIndex].skipped_bytes
 		    += skip_bytes;

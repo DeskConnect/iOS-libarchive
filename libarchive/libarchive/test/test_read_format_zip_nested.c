@@ -34,7 +34,7 @@ DEFINE_TEST(test_read_format_zip_nested)
 	struct archive_entry *ae;
 
 	extract_reference_file(refname);
-	p = slurpfile(&s, refname);
+	p = slurpfile(&s, "%s", refname);
 
 	/* Inspect outer Zip */
 	assert((a = archive_read_new()) != NULL);
@@ -64,6 +64,8 @@ DEFINE_TEST(test_read_format_zip_nested)
 	assertEqualIntA(a, ARCHIVE_EOF, archive_read_next_header(a, &ae));
 	assertEqualIntA(a, ARCHIVE_OK, archive_read_close(a));
 	assertEqualIntA(a, ARCHIVE_OK, archive_read_free(a));
+
+	free(p);
 
 	/* Inspect inner Zip. */
 	assert((a = archive_read_new()) != NULL);

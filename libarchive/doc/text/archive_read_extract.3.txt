@@ -2,7 +2,7 @@ ARCHIVE_READ_EXTRACT(3)  BSD Library Functions Manual  ARCHIVE_READ_EXTRACT(3)
 
 NAME
      archive_read_extract, archive_read_extract2,
-     archive_read_extract_set_progress_callback — functions for reading
+     archive_read_extract_set_progress_callback -- functions for reading
      streaming archives
 
 LIBRARY
@@ -46,7 +46,7 @@ DESCRIPTION
 	     options yourself.
      archive_read_extract_set_progress_callback()
 	     Sets a pointer to a user-defined callback that can be used for
-	     updating progress displays during extraction.  The progress func‐
+	     updating progress displays during extraction.  The progress func-
 	     tion will be invoked during the extraction of large regular
 	     files.  The progress function will be invoked with the pointer
 	     provided to this call.  Generally, the data pointed to should
@@ -58,7 +58,7 @@ RETURN VALUES
      Most functions return zero on success, non-zero on error.	The possible
      return codes include: ARCHIVE_OK (the operation succeeded), ARCHIVE_WARN
      (the operation succeeded but a non-critical error was encountered),
-     ARCHIVE_EOF (end-of-archive was encountered), ARCHIVE_RETRY (the opera‐
+     ARCHIVE_EOF (end-of-archive was encountered), ARCHIVE_RETRY (the opera-
      tion failed but can be retried), and ARCHIVE_FATAL (there was a fatal
      error; the archive should be closed immediately).
 
@@ -67,8 +67,8 @@ ERRORS
      archive_errno() and archive_error_string() functions.
 
 SEE ALSO
-     tar(1), libarchive(3), archive_read(3), archive_read_data(3),
-     archive_read_filter(3), archive_read_format(3), archive_read_open(3),
-     archive_read_set_options(3), archive_util(3), tar(5)
+     tar(1), archive_read(3), archive_read_data(3), archive_read_filter(3),
+     archive_read_format(3), archive_read_open(3),
+     archive_read_set_options(3), archive_util(3), libarchive(3), tar(5)
 
 BSD			       February 2, 2012 			   BSD

@@ -93,6 +93,9 @@ struct archive_match {
 	/* exclusion/inclusion set flag. */
 	int			 setflag;
 
+	/* Recursively include directory content? */
+	int			 recursive_include;
+
 	/*
 	 * Matching filename patterns.
 	 */
@@ -223,6 +226,7 @@ archive_match_new(void)
 		return (NULL);
 	a->archive.magic = ARCHIVE_MATCH_MAGIC;
 	a->archive.state = ARCHIVE_STATE_NEW;
+	a->recursive_include = 1;
 	match_list_init(&(a->inclusions));
 	match_list_init(&(a->exclusions));
 	__archive_rb_tree_init(&(a->exclusion_tree), &rb_ops_mbs);
@@ -471,7 +475,29 @@ archive_match_path_excluded(struct archive *_a,
 }
 
 /*
- * Utilty functions to get statistic information for inclusion patterns.
+ * When recursive inclusion of directory content is enabled,
+ * an inclusion pattern that matches a directory will also
+ * include everything beneath that directory. Enabled by default.
+ *
+ * For compatibility with GNU tar, exclusion patterns always
+ * match if a subset of the full patch matches (i.e., they are
+ * are not rooted at the beginning of the path) and thus there
+ * is no corresponding non-recursive exclusion mode.
+ */
+int
+archive_match_set_inclusion_recursion(struct archive *_a, int enabled)
+{
+	struct archive_match *a;
+
+	archive_check_magic(_a, ARCHIVE_MATCH_MAGIC,
+	    ARCHIVE_STATE_NEW, "archive_match_set_inclusion_recursion");
+	a = (struct archive_match *)_a;
+	a->recursive_include = enabled;
+	return (ARCHIVE_OK);
+}
+
+/*
+ * Utility functions to get statistic information for inclusion patterns.
  */
 int
 archive_match_path_unmatched_inclusions(struct archive *_a)
@@ -655,7 +681,7 @@ add_pattern_from_file(struct archive_match *a, struct match_list *mlist,
 		}
 	}
 
-	/* If something error happend, report it immediately. */ 
+	/* If an error occurred, report it immediately. */
 	if (r < ARCHIVE_OK) {
 		archive_copy_error(&(a->archive), ar);
 		archive_read_free(ar);
@@ -781,7 +807,10 @@ static int
 match_path_inclusion(struct archive_match *a, struct match *m,
     int mbs, const void *pn)
 {
-	int flag = PATHMATCH_NO_ANCHOR_END;
+	/* Recursive operation requires only a prefix match. */
+	int flag = a->recursive_include ?
+		PATHMATCH_NO_ANCHOR_END :
+		0;
 	int r;
 
 	if (mbs) {
@@ -1232,7 +1261,7 @@ set_timefilter_pathname_mbs(struct archive_match *a, int timetype,
 		archive_set_error(&(a->archive), EINVAL, "pathname is empty");
 		return (ARCHIVE_FAILED);
 	}
-	if (stat(path, &st) != 0) {
+	if (la_stat(path, &st) != 0) {
 		archive_set_error(&(a->archive), errno, "Failed to stat()");
 		return (ARCHIVE_FAILED);
 	}
@@ -1270,7 +1299,7 @@ set_timefilter_pathname_wcs(struct archive_match *a, int timetype,
 #endif /* _WIN32 && !__CYGWIN__ */
 
 /*
- * Call back funtions for archive_rb.
+ * Call back functions for archive_rb.
  */
 static int
 cmp_node_mbs(const struct archive_rb_node *n1,
@@ -1405,7 +1434,7 @@ add_entry(struct archive_match *a, int flag,
 			&(a->exclusion_tree), pathname);
 
 		/*
-		 * We always overwrite comparison condision.
+		 * We always overwrite comparison condition.
 		 * If you do not want to overwrite it, you should not
 		 * call archive_match_exclude_entry(). We cannot know
 		 * what behavior you really expect since overwriting
@@ -1481,7 +1510,7 @@ time_excluded(struct archive_match *a, struct archive_entry *entry)
 			if (nsec == a->older_ctime_nsec &&
 			    (a->older_ctime_filter & ARCHIVE_MATCH_EQUAL)
 			      == 0)
-				return (1); /* Eeual, skip it. */
+				return (1); /* Equal, skip it. */
 		}
 	}
 	if (a->newer_mtime_filter) {
@@ -1513,7 +1542,7 @@ time_excluded(struct archive_match *a, struct archive_entry *entry)
 		}
 	}
 
-	/* If there is no excluson list, include the file. */
+	/* If there is no exclusion list, include the file. */
 	if (a->exclusion_entry_list.count == 0)
 		return (0);
 
@@ -1582,7 +1611,7 @@ time_excluded(struct archive_match *a, struct archive_entry *entry)
  */
 
 int
-archive_match_include_uid(struct archive *_a, int64_t uid)
+archive_match_include_uid(struct archive *_a, la_int64_t uid)
 {
 	struct archive_match *a;
 
@@ -1593,7 +1622,7 @@ archive_match_include_uid(struct archive *_a, int64_t uid)
 }
 
 int
-archive_match_include_gid(struct archive *_a, int64_t gid)
+archive_match_include_gid(struct archive *_a, la_int64_t gid)
 {
 	struct archive_match *a;
 
@@ -1700,7 +1729,7 @@ add_owner_id(struct archive_match *a, struct id_array *ids, int64_t id)
 			break;
 	}
 
-	/* Add oowner id. */
+	/* Add owner id. */
 	if (i == ids->count)
 		ids->ids[ids->count++] = id;
 	else if (ids->ids[i] != id) {

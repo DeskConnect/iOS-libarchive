@@ -1,6 +1,6 @@
 ARCHIVE_READ_DATA(3) manual page 
 == NAME == 
-'''archive_read_data''' 
+'''archive_read_data''', 
 '''archive_read_data_block''', 
 '''archive_read_data_skip''', 
 '''archive_read_data_into_fd''' 
@@ -89,7 +89,6 @@ and
 functions. 
 == SEE ALSO == 
 [[ManPageBsdtar1]], 
-[[ManPageibarchive3]], 
 [[ManPagerchiveead3]], 
 [[ManPagerchiveeadxtract3]], 
 [[ManPagerchiveeadilter3]], 
@@ -98,4 +97,5 @@ functions.
 [[ManPagerchiveeadpen3]], 
 [[ManPagerchiveeadetptions3]], 
 [[ManPagerchivetil3]], 
+[[ManPageibarchive3]], 
 [[ManPageTar5]] 

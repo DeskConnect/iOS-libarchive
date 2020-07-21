@@ -33,7 +33,7 @@
 .Nm archive_read_open_fd ,
 .Nm archive_read_open_FILE ,
 .Nm archive_read_open_filename ,
-.Nm archive_read_open_memory ,
+.Nm archive_read_open_memory
 .Nd functions for reading streaming archives
 .Sh LIBRARY
 Streaming Archive Library (libarchive, -larchive)
@@ -67,7 +67,7 @@ Streaming Archive Library (libarchive, -larchive)
 .Fa "size_t block_size"
 .Fc
 .Ft int
-.Fn archive_read_open_memory "struct archive *" "void *buff" "size_t size"
+.Fn archive_read_open_memory "struct archive *" "const void *buff" "size_t size"
 .Sh DESCRIPTION
 .Bl -tag -compact -width indent
 .It Fn archive_read_open
@@ -205,7 +205,7 @@ On failure, the callback should invoke
 .Fn archive_set_error
 to register an error code and message and
 return
-.Cm ARCHIVE_FATAL.
+.Cm ARCHIVE_FATAL .
 .\" .Sh EXAMPLE
 .\"
 .Sh RETURN VALUES
@@ -223,11 +223,11 @@ functions.
 .\"
 .Sh SEE ALSO
 .Xr tar 1 ,
-.Xr libarchive 3 ,
 .Xr archive_read 3 ,
 .Xr archive_read_data 3 ,
 .Xr archive_read_filter 3 ,
 .Xr archive_read_format 3 ,
 .Xr archive_read_set_options 3 ,
 .Xr archive_util 3 ,
+.Xr libarchive 3 ,
 .Xr tar 5
